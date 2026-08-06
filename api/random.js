@@ -1,31 +1,60 @@
-const fs = require('fs');
-const path = require('path');
+// 导入 Notion 客户端
+const { Client } = require('@notionhq/client');
 
-module.exports = (req, res) => {
-  // 指向 public/images 文件夹
-  const imagesDir = path.join(process.cwd(), 'public', 'images');
-  
-  let files;
-  try {
-    // 读取文件夹中的所有文件
-    files = fs.readdirSync(imagesDir);
-    // 只保留常见图片格式，过滤掉其他文件
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-    files = files.filter(file => imageExtensions.includes(path.extname(file).toLowerCase()));
-  } catch (e) {
-    // 如果文件夹不存在或无法读取，返回错误提示
-    return res.status(500).json({ error: '图片目录不存在或无法读取' });
-  }
+// 初始化 Notion 客户端
+const notion = new Client({
+    auth: process.env.NOTION_API_KEY,
+});
 
-  // 如果文件夹内没有图片文件
-  if (files.length === 0) {
-    return res.status(404).json({ error: '目录中没有找到图片文件' });
-  }
+module.exports = async (req, res) => {
+    // 1. 从环境变量读取数据库 ID
+    const databaseId = process.env.NOTION_DATABASE_ID;
+    if (!databaseId) {
+        return res.status(500).json({ error: '服务器配置错误: 缺少 NOTION_DATABASE_ID' });
+    }
 
-  // 随机挑选一张图片
-  const randomFile = files[Math.floor(Math.random() * files.length)];
-  
-  // 设置状态码为 302（临时重定向），自动跳转到该图片的静态访问地址
-  res.writeHead(302, { Location: `/images/${randomFile}` });
-  res.end();
+    try {
+        // 2. 查询 Notion 数据库，获取所有条目
+        // 注意：Notion API 单次最多返回 100 条[reference:4]，如果图片超过100张，需要处理分页
+        const response = await notion.databases.query({
+            database_id: databaseId,
+        });
+
+        const pages = response.results;
+
+        // 3. 从所有条目中提取图片 URL
+        let imageUrls = [];
+        for (const page of pages) {
+            // 假设存放图片的列名是 'Image'，请根据你的实际列名修改
+            const filesProperty = page.properties['Image'];
+            if (filesProperty && filesProperty.type === 'files') {
+                // 遍历该列中的所有文件
+                for (const file of filesProperty.files) {
+                    // 获取图片的 URL
+                    // 注意：Notion API 返回的 URL 是临时的，有效期约 1 小时[reference:6][reference:7]
+                    // 但每次请求 API 都会获取最新 URL，因此可以正常工作
+                    const url = file.file?.url || file.external?.url;
+                    if (url) {
+                        imageUrls.push(url);
+                    }
+                }
+            }
+        }
+
+        // 4. 如果没有找到任何图片，返回错误
+        if (imageUrls.length === 0) {
+            return res.status(404).json({ error: '在 Notion 数据库中没有找到图片' });
+        }
+
+        // 5. 随机选择一张图片
+        const randomImageUrl = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+
+        // 6. 重定向到该图片地址
+        res.writeHead(302, { Location: randomImageUrl });
+        res.end();
+
+    } catch (error) {
+        console.error('Notion API 错误:', error);
+        res.status(500).json({ error: '获取图片失败，请检查服务器日志' });
+    }
 };
