@@ -1,0 +1,21 @@
+{
+  "name": "random-image-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jalen9428/random-image-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Jalen9428/random-image-api/issues"
+  },
+  "homepage": "https://github.com/Jalen9428/random-image-api#readme"
+}
