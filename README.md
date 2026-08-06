@@ -67,6 +67,10 @@ https://your-project.vercel.app/api/random
 
 You will get a random image via **302 redirect**.
 
+Note: Since Vercel's free domain may be subject to DNS pollution in China, making it inaccessible, users in China may need to register their own custom domain for access or choose an alternative hosting platform.
+
+After binding a new custom domain to Vercel for the first time, global propagation will take approximately 5–10 minutes. It is normal for the custom domain to be temporarily inaccessible immediately after binding; please try again later.
+
 ---
 
 ## 📁 Project Structure
@@ -201,6 +205,10 @@ https://你的项目名.vercel.app/api/random
 ```
 
 即可获得随机图片（302 重定向）。
+
+注：由于 Vercel 免费域名在中国可能受到 DNS 污染，导致无法访问，中国用户可能需要自行注册一个域名进行访问，或选用其他网站部署。
+
+Vercel 首次绑定一个新的自定义域名之后，需要约5~10分钟进行全球同步，自定义域名刚绑定时无法访问为正常现象，请您稍后再试。
 
 ---
 
