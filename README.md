@@ -1,3 +1,7 @@
+# English README
+
+---
+
 # Random Image API
 
 A lightweight random image API powered by **Vercel + Notion**.  
@@ -16,8 +20,6 @@ Supports one-click deployment. Your image library is managed through a Notion da
 > 本 README 同时支持中文与英文。
 
 ---
-
-# English README
 
 ## ✨ Features
 
@@ -132,6 +134,10 @@ MIT © Jalen9428
 
 ---
 
+# 中文 README
+
+---
+
 # Random Image API
 
 一个基于 **Vercel + Notion** 的轻量级随机图片 API，支持一键部署，图片库通过 Notion 数据库管理，无需重新部署即可随时增删图片。
@@ -149,8 +155,6 @@ MIT © Jalen9428
 > 本 README 同时支持中文与英文。
 
 ---
-
-# 中文 README
 
 ## ✨ 特性
 
