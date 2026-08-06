@@ -35,8 +35,7 @@ Supports one-click deployment. Your image library is managed through a Notion da
 
 1. Create a new page in Notion and choose **Table** view to create a database.
 2. Add a column of type **Files & media** and name it `Image` (case-sensitive).
-3. Add images row by row. You can upload files directly or paste external links.  
-   Since Notion database images are stored on overseas servers, using external links is recommended if your users are in China.
+3. Add images row by row. You can upload files directly or paste external links. 
 
 > 💡 **Note**: The column name must be `Image`, otherwise you need to modify the corresponding field in the code.
 
@@ -151,7 +150,7 @@ MIT © Jalen9428
 
 1. 在 Notion 中新建一个页面，选择 **Table** 视图创建数据库。
 2. 添加一列，类型选择 **Files & media**，命名为 `Image`（区分大小写）。
-3. 在表格中逐行添加图片（可直接上传或粘贴外链。由于 Notion 数据库图片存储在境外服务器，建议使用外链；如果你的用户不在中国，可忽略）。
+3. 在表格中逐行添加图片（可直接上传或粘贴外链）。
 
 > 💡 **注意**：列名必须为 `Image`，否则需要修改代码中的对应字段。
 
