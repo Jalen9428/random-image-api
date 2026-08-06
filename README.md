@@ -132,6 +132,24 @@ MIT © Jalen9428
 
 ---
 
+# Random Image API
+
+一个基于 **Vercel + Notion** 的轻量级随机图片 API，支持一键部署，图片库通过 Notion 数据库管理，无需重新部署即可随时增删图片。
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID&envDescription=Please%20enter%20your%20Notion%20integration%20token%20and%20database%20ID)
+
+---
+
+## 🌐 Language / 语言切换
+
+- [中文 README](#中文-readme)
+- [English README](#english-readme)
+
+> This README supports both Chinese and English.  
+> 本 README 同时支持中文与英文。
+
+---
+
 # 中文 README
 
 ## ✨ 特性
