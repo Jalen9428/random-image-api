@@ -49,8 +49,8 @@ Manage your image library directly in a Notion database — add, remove, or repl
 7. In **Content access**, click **Add pages & databases**.
 8. Select the published database you just created and add it to the integration.
 9. Copy the **Database ID**:
-   - From the URL `notion.com/p/(Database ID)?v=...`
-   - Or from `notion.site/...`, where the 32-character ID appears after `notion.site/`
+   - From the URL `app.notion.com/p/(Database ID)?v=...`
+   - Or from `xxx.notion.site/...`, where the 32-character ID appears after `notion.site/`
 
 ### 3. Deploy to Vercel
 
