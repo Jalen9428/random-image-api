@@ -54,7 +54,7 @@ Manage your image library directly in a Notion database — add, remove, or repl
 
 ### 3. Deploy to Vercel
 
-1. Open the project page and click the **Deploy with Vercel** button, or deploy manually.
+1. Open the project page and click the **Deploy** button, or deploy manually.
 2. Import the GitHub repository into Vercel.
 3. Add the following environment variables:
    - `NOTION_API_KEY`: your Notion integration access token
@@ -197,7 +197,7 @@ MIT © Jalen9428
 
 ### 3. 部署到 Vercel
 
-1. 打开项目页面，点击 README 中的 **Deploy with Vercel** 按钮，或者手动部署。
+1. 打开项目页面，点击 README 中的 **Deploy** 按钮，或者手动部署。
 2. 将 GitHub 仓库导入 Vercel。
 3. 添加以下环境变量：
    - `NOTION_API_KEY`：你的 Notion Access token
