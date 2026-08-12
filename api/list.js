@@ -1,4 +1,3 @@
-// 验证函数
 function checkAuth(req) {
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (!adminPassword) return true;
@@ -6,8 +5,17 @@ function checkAuth(req) {
     return provided === adminPassword;
 }
 
+// 从页面对象中提取标题文本
+function getTitleFromPage(page) {
+    for (const [key, prop] of Object.entries(page.properties)) {
+        if (prop.type === 'title') {
+            return prop.title.map(t => t.plain_text).join('') || '未命名';
+        }
+    }
+    return '未命名';
+}
+
 module.exports = async (req, res) => {
-    // 先验证权限
     if (!checkAuth(req)) {
         return res.status(401).json({ error: '未授权，请提供正确密码' });
     }
@@ -42,8 +50,7 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
-            const nameProperty = page.properties['Name'];
-            const fileName = nameProperty?.title?.[0]?.plain_text || '未命名';
+            const fileName = getTitleFromPage(page);
 
             const filesProperty = page.properties['Image'];
             let urls = [];
