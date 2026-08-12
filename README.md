@@ -1,9 +1,9 @@
 # Random Image API
 
-A lightweight random image API powered by **Vercel + Notion**.  
-Manage your image library directly in a Notion database — add, remove, or replace images anytime without redeploying.
+A lightweight random image API powered by **Vercel + Notion** with a built‑in management panel.  
+Manage your image library via a web interface – add, preview, and delete images, all protected by an optional password.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID&envDescription=Please%20enter%20your%20Notion%20integration%20token%20and%20database%20ID)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID,ADMIN_PASSWORD&envDescription=Please%20enter%20your%20Notion%20credentials%20and%20(optionally)%20an%20admin%20password%20for%20the%20management%20panel)
 
 ---
 
@@ -16,11 +16,12 @@ Manage your image library directly in a Notion database — add, remove, or repl
 
 ## ✨ Features
 
-- 📦 **Zero maintenance**: Manage images in Notion, and changes take effect immediately without redeploying
-- ⚡ **Fast response**: Powered by Vercel and Notion CDN
-- 🔐 **Secure**: Sensitive credentials are stored in environment variables
-- 🆓 **Free to use**: Works within the free tiers of Vercel and Notion
-- 🖼️ **Supports common image formats**: JPG, PNG, WebP, GIF, etc.
+- 📦 **Zero maintenance**: Manage images in Notion – changes take effect immediately, no redeploy
+- 🖥️ **Web‑based management panel**: Add images via external links or file uploads, preview all images, and delete them with one click
+- 🔐 **Optional password protection**: Protect the management panel with an environment variable; if not set, the panel is open
+- ⚡ **Fast response**: Powered by Vercel edge functions and Notion CDN
+- 🆓 **Free to use**: Works within free tiers of Vercel and Notion
+- 🖼️ **Supports common formats**: JPG, PNG, WebP, GIF, etc.
 
 ---
 
@@ -44,90 +45,108 @@ Manage your image library directly in a Notion database — add, remove, or repl
 3. Open the integration page and copy the **Access token** under **Integration token**.
    - This token will be used as `NOTION_API_KEY`
 4. Go back to your Notion database.
-5. Click **Share** in the top-right corner, then click **Publish**.
+5. Click **Share** in the top‑right corner, then click **Publish**.
 6. After publishing, go back to the integration settings page.
 7. In **Content access**, click **Add pages & databases**.
 8. Select the published database you just created and add it to the integration.
 9. Copy the **Database ID**:
    - From the URL `app.notion.com/p/(Database ID)?v=...`
-   - Or from `xxx.notion.site/...`, where the 32-character ID appears after `notion.site/`
+   - Or from `xxx.notion.site/...`, where the 32‑character ID appears after `notion.site/`
 
 ### 3. Deploy to Vercel
 
-1. Open the project page and click the **Deploy** button, or deploy manually.
-2. Import the GitHub repository into Vercel.
-3. Add the following environment variables:
-   - `NOTION_API_KEY`: your Notion integration access token
-   - `NOTION_DATABASE_ID`: your Notion Database ID
-4. Click **Deploy** and wait for the build to finish.
+1. Click the **Deploy** button above or manually import the repository into Vercel.
+2. In the Vercel project settings, add the following environment variables:
+   - `NOTION_API_KEY` – your Notion access token
+   - `NOTION_DATABASE_ID` – your Notion database ID
+   - `ADMIN_PASSWORD` – (optional) password to protect the management panel. If omitted, the panel is accessible without login.
+3. Click **Deploy** and wait for the build to finish.
 
-After deployment, visit:
+After deployment, you can access:
 
-```bash
-https://your-domain.vercel.app/api/random
-```
+- **Random image API**: `https://your-domain.vercel.app/api/random` – returns a 302 redirect to a random image.
+- **Management panel**: `https://your-domain.vercel.app/` – browse, add, and delete images via a user‑friendly interface.
 
-The request will automatically redirect to a random image in your Notion database.
-
-> Note: In mainland China, Vercel’s default domain may be inaccessible due to DNS issues. You may need to use a custom domain.
+> **Note**: In mainland China, Vercel’s default domain may be inaccessible due to DNS issues. You may need to use a custom domain.
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure (Full)
 
-```bash
+```
 random-image-api/
 ├── api/
-│   └── random.js # Core API code
-├── package.json  # Dependency config
-└── README.md     # Project documentation
+│   ├── random.js         # Public API – returns random image (302 redirect)
+│   ├── list.js           # (Protected) returns list of all images
+│   ├── add.js            # (Protected) batch add image URLs to Notion
+│   ├── delete.js         # (Protected) delete an image by page ID
+│   └── check-auth.js     # Checks if password is set and validates login
+├── public/
+│   └── index.html        # Management panel frontend (login + dashboard)
+├── package.json          # Dependencies (none required for core)
+└── README.md
 ```
 
 ---
 
-## 🔧 Customization
+## 🔧 Management Panel Usage
+
+### Login
+- If `ADMIN_PASSWORD` is set, you will be prompted to enter it when accessing the root path `/`.
+- The password is stored in `sessionStorage` for the current browser session.
+- If `ADMIN_PASSWORD` is not set, the panel opens without authentication.
+
+### Adding Images
+- **Batch external links**: Paste multiple URLs (one per line) and click “Import”.
+- **File upload**: Drag and drop image files or click to select.  
+  *Note: This uses ImgBB as a free image host – you need to obtain a free API key from [ImgBB](https://api.imgbb.com/) and enter it in the panel (saved locally).*
+
+### Preview & Delete
+- All images from your Notion database are displayed as a grid.
+- Hover over an image card to reveal a red **×** button – click to delete the image (moves it to the Notion trash).
+
+> **Important**: The management panel is protected by the same password used for the API endpoints. All admin‑facing endpoints (`/api/list`, `/api/add`, `/api/delete`) require the `X-Admin-Password` header, which the frontend automatically adds after login.
+
+---
+
+## ⚙️ Customization
 
 ### Change the image property name
+If your Notion property is not named `Image`, update the following files:
+- `api/random.js`
+- `api/list.js`
+- `api/add.js`
 
-If your Notion property is not named `Image`, update the corresponding field in `api/random.js`:
-
-```javascript
-const filesProperty = page.properties['YourPropertyName'];
-```
+Look for `page.properties['Image']` and replace `'Image'` with your property name.
 
 ### Return JSON instead of redirect
-
-If you want the API to return JSON instead of a 302 redirect, replace:
-
+In `api/random.js`, replace:
 ```javascript
 res.writeHead(302, { Location: randomImageUrl })
 ```
-
 with:
-
 ```javascript
 res.status(200).json({ url: randomImageUrl });
 ```
 
-### Add caching
-
-You can reduce Notion API calls by adding cache headers on Vercel or implementing in-memory caching in code.
+### Adjust batch upload concurrency
+In `api/add.js`, a 400ms delay is used between each Notion API call to avoid rate limits. You can adjust this value inside the loop.
 
 ---
 
 ## 📌 FAQ
 
-**Q: Why is image loading slow?**  
-A: Notion-hosted files use Notion’s CDN, and direct uploads may load slowly for users in mainland China. External image hosting is recommended for better performance.
+**Q: Why are images loading slowly?**  
+A: Notion‑hosted files use Notion’s CDN; direct uploads may be slow from mainland China. Use external image links from domestic CDNs for better performance.
 
 **Q: How do I update images?**  
-A: Simply edit the Notion database. No redeployment is needed.
+A: Simply edit the Notion database, or use the management panel to add/delete images – no redeployment needed.
 
-**Q: Why do I get a 404 after deployment?**  
-A: Check whether the environment variables are set correctly and whether the integration has access to the database.
+**Q: Is the management panel safe if `ADMIN_PASSWORD` is not set?**  
+A: The panel is open, but your Notion database remains secure as long as your `NOTION_API_KEY` is kept secret. For production, we strongly recommend setting a password.
 
-**Q: Is Vercel’s free tier enough?**  
-A: Yes. This API only returns a redirect, so the actual image traffic is handled by Notion or your image host.
+**Q: Can I use my own image host instead of ImgBB for file uploads?**  
+A: Yes – you can modify the `handleFiles()` function in `public/index.html` to call your own upload endpoint.
 
 ---
 
@@ -143,27 +162,21 @@ MIT © Jalen9428
 
 # Random Image API
 
-一个基于 **Vercel + Notion** 的轻量级随机图片 API。  
-你可以直接通过 Notion 数据库管理图片，无需修改 GitHub 仓库或重新部署，图片增删改可即时生效。
+一个基于 **Vercel + Notion** 的轻量级随机图片 API，并附带**可视化管理面板**。  
+你可以通过 Web 界面管理图片库——添加、预览、删除图片，并可选择密码保护。
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID&envDescription=Please%20enter%20your%20Notion%20integration%20token%20and%20database%20ID)
-
----
-
-## 🌐 Language / 语言切换
-
-- [中文 README](#中文-readme)
-- [English README](#english-readme)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID,ADMIN_PASSWORD&envDescription=请填入%20Notion%20凭证和（可选）管理面板密码)
 
 ---
 
-## ✨ 特性
+## ✨ 功能特性
 
-- 📦 **零维护**：图片直接管理在 Notion 中，修改后立即生效，无需重新部署
-- ⚡ **响应快**：基于 Vercel + Notion CDN
-- 🔐 **安全**：敏感信息通过环境变量管理
-- 🆓 **免费可用**：可在 Vercel 和 Notion 免费额度内运行
-- 🖼️ **支持常见图片格式**：JPG、PNG、WebP、GIF 等
+- 📦 **零维护**：在 Notion 中管理图片，修改即时生效，无需重新部署
+- 🖥️ **Web 管理面板**：支持外链批量添加、文件上传、图片列表预览、一键删除
+- 🔐 **可选密码保护**：通过环境变量设置管理面板密码，不设置则无需登录
+- ⚡ **响应迅速**：基于 Vercel 边缘函数 + Notion CDN
+- 🆓 **完全免费**：使用 Vercel 和 Notion 免费额度即可运行
+- 🖼️ **支持常见格式**：JPG、PNG、WebP、GIF 等
 
 ---
 
@@ -171,109 +184,121 @@ MIT © Jalen9428
 
 ### 1. 准备 Notion 数据库
 
-1. 在你的 Notion 工作区中，新建一个**空数据库**。
-2. 新建一个属性，类型选择 **Files & media（文件和媒体）**，并将该属性命名为 `Image`。
-   - 属性名必须严格叫做 `Image`
-   - 如果你想使用其他属性名，需要同步修改代码
-3. 在这个属性中添加你的图片。
-   - 可以直接上传图片
-   - 也可以使用外链图片地址
-   - 中国大陆用户推荐使用外链，因为直接上传的图片加载速度可能较慢
+1. 在 Notion 中新建一个**空数据库**。
+2. 添加一个属性，类型选择 **Files & media（文件和媒体）**，并命名为 `Image`。
+   - 属性名必须严格为 `Image`
+   - 如果想用其他名称，需同步修改代码
+3. 在该属性中添加图片（可直接上传或使用外链）。
+   - 中国大陆用户建议使用外链，因为直接上传的图片可能加载较慢
 
 ### 2. 获取 Notion API 凭证
 
 1. 前往 [Notion Developers](https://www.notion.so/my-integrations)，创建一个新的 integration。
-2. 输入任意连接名称，然后点击 **Create connection（创建连接）**。
-3. 打开 integration 页面，复制 **Integration token（集成令牌）** 下方的 **Access token（访问令牌）**。
-   - 这个 token 将作为 `NOTION_API_KEY`
-4. 回到你的 Notion 数据库页面。
-5. 点击右上角的 **Share（共享）**，然后点击 **Publish（发布）**。
-6. **必须先发布数据库**，然后回到 integration 设置页面。
-7. 在 **Content access（内容访问权限）** 中点击 **Add pages & databases（添加页面和数据库）**。
-8. 选择你刚刚发布的数据库，并将其添加到该 integration。
-9. 复制 **Database ID**：
-   - 可以从 `app.notion.com/p/(Database ID)?v=...` 这样的链接中获取
-   - 也可以从 `xxx.notion.site/...` 链接中找到 `notion.site/` 后面的 32 位字符
+2. 填写名称，点击 **Create connection**。
+3. 复制 **Integration token** 下方的 **Access token**（该 token 将用作 `NOTION_API_KEY`）。
+4. 回到 Notion 数据库页面，点击右上角 **Share** → **Publish** 发布数据库。
+5. 在 integration 设置页面的 **Content access** 中，点击 **Add pages & databases**，选择刚刚发布的数据库，完成授权。
+6. 获取 **Database ID**：
+   - 从 URL `app.notion.com/p/(Database ID)?v=...` 中提取
+   - 或从 `xxx.notion.site/...` 中 `notion.site/` 后面的 32 位字符
 
 ### 3. 部署到 Vercel
 
-1. 打开项目页面，点击 README 中的 **Deploy** 按钮，或者手动部署。
-2. 将 GitHub 仓库导入 Vercel。
-3. 添加以下环境变量：
-   - `NOTION_API_KEY`：你的 Notion Access token
-   - `NOTION_DATABASE_ID`：你的 Notion Database ID
-4. 点击 **Deploy**，等待部署完成。
+1. 点击上方 **Deploy** 按钮，或手动将仓库导入 Vercel。
+2. 在 Vercel 项目设置中添加以下环境变量：
+   - `NOTION_API_KEY` – Notion 访问令牌
+   - `NOTION_DATABASE_ID` – Notion 数据库 ID
+   - `ADMIN_PASSWORD` – （可选）管理面板登录密码。若不设置，面板将公开访问
+3. 点击 **Deploy**，等待构建完成。
 
-部署成功后，访问：
+部署成功后，你可以访问：
 
-```bash
-https://你的域名.vercel.app/api/random
-```
+- **随机图片 API**：`https://你的域名.vercel.app/api/random` – 返回 302 重定向到随机图片。
+- **管理面板**：`https://你的域名.vercel.app/` – 通过可视化界面管理图片。
 
-即可自动跳转到 Notion 数据库中的一张随机图片。
-
-> 注意：Vercel 默认域名在中国大陆可能会受到 DNS 问题影响，导致无法访问。如有需要，请自行配置自定义域名。
+> **注意**：Vercel 默认域名在中国大陆可能因 DNS 问题无法访问，建议配置自定义域名。
 
 ---
 
-## 📁 项目结构
+## 📁 项目结构（完整）
 
-```bash
+```
 random-image-api/
 ├── api/
-│   └── random.js # 核心 API 代码
-├── package.json  # 依赖配置
-└── README.md     # 项目说明
+│   ├── random.js         # 公开 API – 随机图片（302 重定向）
+│   ├── list.js           # （受保护）获取所有图片列表
+│   ├── add.js            # （受保护）批量添加外链到 Notion
+│   ├── delete.js         # （受保护）根据页面 ID 删除图片
+│   └── check-auth.js     # 检查密码状态并验证登录
+├── public/
+│   └── index.html        # 管理面板前端（登录 + 主界面）
+├── package.json          # 依赖配置（核心无额外依赖）
+└── README.md
 ```
 
 ---
 
-## 🔧 自定义与扩展
+## 🔧 管理面板使用说明
+
+### 登录
+- 若设置了 `ADMIN_PASSWORD`，访问根路径 `/` 时会弹出登录界面。
+- 密码保存在 `sessionStorage` 中，关闭浏览器标签页即清除。
+- 若未设置密码，面板直接进入。
+
+### 添加图片
+- **批量外链**：在文本框中每行一个 URL，点击“导入外链”。
+- **文件上传**：拖拽或点击选择图片文件。  
+  *注：使用免费图床 ImgBB，需要先在 [ImgBB](https://api.imgbb.com/) 获取免费 API Key，并在面板中填入（Key 会保存在本地）。*
+
+### 预览与删除
+- 所有图片以网格形式展示。
+- 鼠标悬停到图片卡片上，右上角会出现红色 **×** 按钮，点击确认后即可删除图片（移入 Notion 回收站）。
+
+> **重要**：管理面板的所有后端接口（`/api/list`、`/api/add`、`/api/delete`）均要求携带 `X-Admin-Password` 头，前端登录后会自动添加。这样即使绕过前端也无法直接调用。
+
+---
+
+## ⚙️ 自定义配置
 
 ### 修改图片属性名
+如果 Notion 属性名不是 `Image`，请修改以下文件：
+- `api/random.js`
+- `api/list.js`
+- `api/add.js`
 
-如果你的 Notion 属性名不是 `Image`，请修改 `api/random.js` 中对应字段：
+将 `page.properties['Image']` 中的 `'Image'` 替换为你的属性名。
 
-```javascript
-const filesProperty = page.properties['你的属性名'];
-```
-
-### 返回 JSON 而不是重定向
-
-如果你希望接口返回 JSON，而不是 302 跳转，可以将：
-
+### 返回 JSON 而非重定向
+在 `api/random.js` 中，将：
 ```javascript
 res.writeHead(302, { Location: randomImageUrl })
 ```
-
-改为：
-
+替换为：
 ```javascript
 res.status(200).json({ url: randomImageUrl });
 ```
 
-### 添加缓存
-
-你可以在 Vercel 层配置缓存头，或者在代码中实现简单的内存缓存，以减少 Notion API 调用次数。
+### 调整批量添加的并发延迟
+在 `api/add.js` 中，每次调用 Notion API 后会有 400ms 延迟以避免限流。你可以根据需要修改该值。
 
 ---
 
 ## 📌 常见问题
 
 **Q：为什么图片加载很慢？**  
-A：Notion 上传的文件会走它自己的 CDN，对于中国大陆用户可能会比较慢。建议使用支持直链的外链图床或对象存储服务。
+A：Notion 上传的文件使用其 CDN，从中国大陆访问可能较慢。建议使用国内图床的外链，并粘贴到 Notion 的“外链”类型中。
 
 **Q：如何更新图片？**  
-A：直接在 Notion 数据库中增删改即可，无需重新部署。
+A：直接修改 Notion 数据库，或使用管理面板增删图片，无需重新部署。
 
-**Q：部署后访问 404？**  
-A：请检查环境变量是否正确配置，并确认你的 Notion 数据库已经通过 `Add pages & databases` 授权给对应的 integration。
+**Q：不设置 `ADMIN_PASSWORD` 是否安全？**  
+A：面板是公开的，但你的 Notion 数据库仍受 `NOTION_API_KEY` 保护。生产环境强烈建议设置密码。
 
-**Q：Vercel 免费额度够用吗？**  
-A：够用。这个 API 只返回重定向，图片流量主要由 Notion 或你的图床承担，Vercel 消耗很小。
+**Q：上传文件用的 ImgBB 是否必须？**  
+A：不是必须。如果你有自己的图片存储服务，可以修改 `public/index.html` 中的 `handleFiles()` 函数，调用你自己的上传接口。
 
 ---
 
-## 📄 License
+## 📄 许可证
 
 MIT © Jalen9428
