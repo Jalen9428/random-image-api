@@ -9,11 +9,42 @@
         .image-grid img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; }
         .drop-area { border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
         .drop-area:hover { border-color: #3b82f6; background: #f0f9ff; }
+
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        #loginOverlay.hidden { display: none; }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-6">
 
-    <div class="max-w-6xl mx-auto">
+    <!-- 登录遮罩 -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 class="text-2xl font-bold mb-4">🔐 管理面板登录</h2>
+            <p class="text-gray-600 mb-4">请输入管理员密码</p>
+            <input id="passwordInput" type="password" placeholder="请输入密码" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <button id="loginBtn" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition">登录</button>
+            <p id="loginError" class="text-red-500 text-sm mt-2 hidden">密码错误，请重试</p>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="mainContent" class="max-w-6xl mx-auto hidden">
 
         <!-- 标题个性化 -->
         <div class="bg-white rounded-xl shadow p-6 mb-6 flex justify-between items-center flex-wrap gap-4">
@@ -40,7 +71,7 @@
 
             <hr class="my-4">
 
-            <!-- 方式2：上传图片文件 (借助免费图床 ImgBB) -->
+            <!-- 方式2：上传图片文件 -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
                 <div class="flex flex-wrap gap-3 items-center">
@@ -67,29 +98,93 @@
     </div>
 
     <script>
+        // 获取存储的密码（sessionStorage）
+        function getAdminPassword() {
+            return sessionStorage.getItem('adminPassword') || '';
+        }
+
+        function setAdminPassword(pwd) {
+            sessionStorage.setItem('adminPassword', pwd);
+        }
+
+        // 带密码头的 fetch 封装
+        async function authFetch(url, options = {}) {
+            const headers = options.headers || {};
+            const password = getAdminPassword();
+            if (password) {
+                headers['X-Admin-Password'] = password;
+            }
+            options.headers = headers;
+            return fetch(url, options);
+        }
+
         // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            // 加载本地存储的标题
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 先检查是否需要密码
+            try {
+                const res = await fetch('/api/check-auth');
+                const data = await res.json();
+                if (data.needAuth) {
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    document.getElementById('mainContent').classList.add('hidden');
+                } else {
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    initApp();
+                }
+            } catch (err) {
+                alert('检查授权状态失败: ' + err.message);
+            }
+
+            // 登录按钮事件
+            document.getElementById('loginBtn').addEventListener('click', async () => {
+                const pwd = document.getElementById('passwordInput').value;
+                if (!pwd) return;
+                try {
+                    const res = await fetch('/api/check-auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setAdminPassword(pwd);
+                        document.getElementById('loginOverlay').classList.add('hidden');
+                        document.getElementById('mainContent').classList.remove('hidden');
+                        document.getElementById('loginError').classList.add('hidden');
+                        initApp();
+                    } else {
+                        document.getElementById('loginError').classList.remove('hidden');
+                    }
+                } catch (err) {
+                    alert('登录请求失败: ' + err.message);
+                }
+            });
+
+            // 回车登录
+            document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('loginBtn').click();
+            });
+        });
+
+        // 初始化应用
+        function initApp() {
             const savedTitle = localStorage.getItem('siteTitle') || '我的随机图库';
             document.getElementById('siteTitle').value = savedTitle;
             document.title = savedTitle;
 
-            // 加载 ImgBB Key
             const savedKey = localStorage.getItem('imgbbKey') || '';
             document.getElementById('imgbbKey').value = savedKey;
 
-            // 监听标题变化
             document.getElementById('siteTitle').addEventListener('input', (e) => {
                 localStorage.setItem('siteTitle', e.target.value);
                 document.title = e.target.value;
             });
 
-            // 监听 Key 变化
             document.getElementById('imgbbKey').addEventListener('input', (e) => {
                 localStorage.setItem('imgbbKey', e.target.value);
             });
 
-            // 文件拖拽 / 点击
             const dropArea = document.getElementById('dropArea');
             const fileInput = document.getElementById('fileInput');
 
@@ -101,18 +196,26 @@
             });
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length) handleFiles(e.target.files);
-                e.target.value = ''; // 重置
+                e.target.value = '';
             });
 
-            // 首次加载列表
             fetchList();
-        });
+        }
 
         // 获取并渲染列表
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
             try {
-                const res = await fetch('/api/list');
+                const res = await authFetch('/api/list');
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        alert('登录已过期，请重新登录');
+                        sessionStorage.removeItem('adminPassword');
+                        location.reload();
+                        return;
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 const data = await res.json();
                 if (data.error) throw new Error(data.detail || data.error);
 
@@ -152,11 +255,17 @@
             btn.innerText = '导入中...';
 
             try {
-                const res = await fetch('/api/add', {
+                const res = await authFetch('/api/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ urls })
                 });
+                if (res.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    sessionStorage.removeItem('adminPassword');
+                    location.reload();
+                    return;
+                }
                 const data = await res.json();
                 if (res.ok) {
                     alert(`成功导入 ${data.success} 张，失败 ${data.failed} 张`);
@@ -172,7 +281,7 @@
             btn.innerText = '导入外链';
         }
 
-        // 处理上传的图片文件 -> 先传到 ImgBB -> 再调用 /api/add
+        // 处理上传的图片文件
         async function handleFiles(files) {
             const apiKey = document.getElementById('imgbbKey').value.trim();
             if (!apiKey) {
@@ -217,13 +326,18 @@
 
             statusDiv.innerText = `图床上传完成，正在导入 Notion...`;
 
-            // 调用 /api/add 存入 Notion
             try {
-                const res = await fetch('/api/add', {
+                const res = await authFetch('/api/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ urls: uploadedUrls })
                 });
+                if (res.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    sessionStorage.removeItem('adminPassword');
+                    location.reload();
+                    return;
+                }
                 const data = await res.json();
                 statusDiv.innerText = `导入完成：成功 ${data.success} 张，失败 ${data.failed} 张`;
                 fetchList();
