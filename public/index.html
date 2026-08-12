@@ -32,76 +32,112 @@
         .login-box .btn-group button { flex: 1; min-width: 100px; }
 
         .card { position: relative; }
+
         .card .delete-btn {
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(255,0,0,0.8);
+            background: rgba(255,0,0,0.85);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 16px;
-            line-height: 28px;
+            width: 32px;
+            height: 32px;
+            font-size: 18px;
+            line-height: 32px;
             text-align: center;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
             z-index: 2;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .card:hover .delete-btn { opacity: 1; }
-        .card .delete-btn:hover { background: red; }
-
-        .card .download-btn {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 2;
-        }
-        .card:hover .download-btn { opacity: 1; }
-        .card .download-btn:hover { background: rgba(0,0,0,0.8); }
+        .card .delete-btn:hover { background: red; transform: scale(1.05); }
 
         .card .rename-btn {
             position: absolute;
             top: 8px;
             left: 8px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             color: white;
             border: none;
             border-radius: 4px;
-            width: 28px;
-            height: 28px;
-            font-size: 14px;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
             z-index: 2;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .card:hover .rename-btn { opacity: 1; }
-        .card .rename-btn:hover { background: rgba(0,0,0,0.8); }
+        .card .rename-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.05); }
+
+        .card .download-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .card .download-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.05); }
 
         .admin-only { display: none; }
         .admin-only.visible { display: block; }
 
-        /* 禁用输入框样式 */
         input:disabled {
             background: #f3f4f6;
             color: #6b7280;
             cursor: not-allowed;
             border-bottom-color: #d1d5db !important;
+        }
+
+        /* 移动端触控优化：悬停设备默认隐藏，触摸设备常亮放大 */
+        @media (hover: hover) {
+            .card .delete-btn,
+            .card .rename-btn,
+            .card .download-btn {
+                opacity: 0;
+            }
+            .card:hover .delete-btn,
+            .card:hover .rename-btn,
+            .card:hover .download-btn {
+                opacity: 1;
+            }
+        }
+        @media (hover: none) {
+            .card .delete-btn,
+            .card .rename-btn,
+            .card .download-btn {
+                opacity: 0.9;
+            }
+            .card .delete-btn,
+            .card .rename-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                line-height: 40px;
+            }
+            .card .download-btn {
+                padding: 8px 16px;
+                font-size: 15px;
+                bottom: 12px;
+                right: 12px;
+            }
+            .card:active .delete-btn,
+            .card:active .rename-btn,
+            .card:active .download-btn {
+                transform: scale(0.92);
+            }
         }
     </style>
 </head>
@@ -138,11 +174,10 @@
 
         <!-- 管理功能区域（仅管理员可见） -->
         <div id="adminArea" class="admin-only">
-            <!-- 添加图片区域 -->
             <div class="bg-white rounded-xl shadow p-6 mb-6">
                 <h2 class="text-lg font-semibold mb-4">📤 添加图片到 Notion</h2>
 
-                <!-- 方式1：批量粘贴外链 -->
+                <!-- 批量外链 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">批量粘贴外链（每行一个）</label>
                     <textarea id="urlInput" rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png"></textarea>
@@ -151,7 +186,7 @@
 
                 <hr class="my-4">
 
-                <!-- 方式2：上传图片文件 -->
+                <!-- 文件上传 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
                     <div class="flex flex-wrap gap-3 items-center">
@@ -166,7 +201,7 @@
             </div>
         </div>
 
-        <!-- 预览列表 -->
+        <!-- 图片列表 -->
         <div class="bg-white rounded-xl shadow p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">🖼️ 图片列表 (<span id="imageCount">0</span> 张)</h2>
@@ -179,41 +214,33 @@
     </div>
 
     <script>
-        // ---------- 全局状态 ----------
+        // ---------- 全局 ----------
         let isAdmin = false;
 
-        // ---------- 密码管理 ----------
         function getAdminPassword() {
             return sessionStorage.getItem('adminPassword') || '';
         }
-
         function setAdminPassword(pwd) {
             sessionStorage.setItem('adminPassword', pwd);
         }
 
-        // ---------- 带密码头的 fetch ----------
         async function authFetch(url, options = {}) {
             const headers = options.headers || {};
             const password = getAdminPassword();
-            if (password) {
-                headers['X-Admin-Password'] = password;
-            }
+            if (password) headers['X-Admin-Password'] = password;
             options.headers = headers;
             return fetch(url, options);
         }
 
-        // ---------- 下载功能 ----------
         function downloadImage(url) {
-            const downloadUrl = `/api/download?url=${encodeURIComponent(url)}`;
             const a = document.createElement('a');
-            a.href = downloadUrl;
+            a.href = `/api/download?url=${encodeURIComponent(url)}`;
             a.download = '';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
 
-        // ---------- 重命名功能 ----------
         async function renameImage(pageId, currentName) {
             const newName = prompt('请输入新的图片名称：', currentName);
             if (newName === null || newName.trim() === '') return;
@@ -243,7 +270,6 @@
 
         // ---------- 初始化 ----------
         document.addEventListener('DOMContentLoaded', async () => {
-            // 检查是否需要密码
             try {
                 const res = await fetch('/api/check-auth');
                 const data = await res.json();
@@ -251,7 +277,6 @@
                     document.getElementById('loginOverlay').classList.remove('hidden');
                     document.getElementById('mainContent').classList.add('hidden');
                 } else {
-                    // 无密码，直接以管理员身份进入
                     isAdmin = true;
                     document.getElementById('loginOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
@@ -262,7 +287,6 @@
                 alert('检查授权状态失败: ' + err.message);
             }
 
-            // 登录按钮
             document.getElementById('loginBtn').addEventListener('click', async () => {
                 const pwd = document.getElementById('passwordInput').value;
                 if (!pwd) return;
@@ -289,7 +313,6 @@
                 }
             });
 
-            // 访客按钮
             document.getElementById('guestBtn').addEventListener('click', () => {
                 isAdmin = false;
                 document.getElementById('loginOverlay').classList.add('hidden');
@@ -298,45 +321,35 @@
                 initApp();
             });
 
-            // 回车登录
             document.getElementById('passwordInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('loginBtn').click();
             });
         });
 
-        // ---------- 应用初始化 ----------
         function initApp() {
-            const siteTitleInput = document.getElementById('siteTitle');
+            const titleInput = document.getElementById('siteTitle');
             const savedTitle = localStorage.getItem('siteTitle') || '我的随机图库';
-            siteTitleInput.value = savedTitle;
+            titleInput.value = savedTitle;
             document.title = savedTitle;
 
             // 根据权限控制标题编辑
-            siteTitleInput.disabled = !isAdmin;
-            if (!isAdmin) {
-                siteTitleInput.title = '访客模式不可修改标题';
-            } else {
-                siteTitleInput.title = '';
-            }
+            titleInput.disabled = !isAdmin;
+            titleInput.title = isAdmin ? '' : '访客模式不可修改标题';
 
-            const savedKey = localStorage.getItem('imgbbKey') || '';
-            document.getElementById('imgbbKey').value = savedKey;
-
-            // 标题输入事件（仅管理员有效）
-            siteTitleInput.oninput = function(e) {
+            titleInput.oninput = function(e) {
                 if (!isAdmin) return;
                 localStorage.setItem('siteTitle', e.target.value);
                 document.title = e.target.value;
             };
 
+            const savedKey = localStorage.getItem('imgbbKey') || '';
+            document.getElementById('imgbbKey').value = savedKey;
             document.getElementById('imgbbKey').addEventListener('input', (e) => {
                 localStorage.setItem('imgbbKey', e.target.value);
             });
 
-            // 文件拖拽 / 点击（仅管理员可用，但功能仍在）
             const dropArea = document.getElementById('dropArea');
             const fileInput = document.getElementById('fileInput');
-
             dropArea.addEventListener('click', () => fileInput.click());
             dropArea.addEventListener('dragover', (e) => e.preventDefault());
             dropArea.addEventListener('drop', (e) => {
@@ -351,11 +364,10 @@
             fetchList();
         }
 
-        // ---------- 获取并渲染列表 ----------
+        // ---------- 列表 ----------
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
             try {
-                // 根据角色选择接口
                 const endpoint = isAdmin ? '/api/list' : '/api/public-list';
                 const fetcher = isAdmin ? authFetch : fetch;
                 const res = await fetcher(endpoint);
@@ -372,8 +384,7 @@
                 if (data.error) throw new Error(data.detail || data.error);
 
                 const grid = document.getElementById('imageGrid');
-                const count = document.getElementById('imageCount');
-                count.innerText = data.total || 0;
+                document.getElementById('imageCount').innerText = data.total || 0;
 
                 if (!data.data || data.data.length === 0) {
                     grid.innerHTML = '<div class="col-span-full text-gray-400 text-center py-10">暂无图片，快去添加吧！</div>';
@@ -382,7 +393,7 @@
 
                 grid.innerHTML = data.data.map(item => `
                     <div class="card border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white">
-                        ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` : 
+                        ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` :
                         `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">无预览</div>`}
                         <div class="p-2 text-xs truncate text-gray-600" title="${item.name}">${item.name}</div>
                         ${isAdmin ? `
@@ -399,14 +410,11 @@
             document.getElementById('loadingTip').style.display = 'none';
         }
 
-        // ---------- 删除图片（仅管理员） ----------
+        // ---------- 删除 ----------
         async function deleteImage(pageId, fileName) {
             if (!confirm(`确定要删除图片“${fileName}”吗？此操作不可恢复！`)) return;
-
             try {
-                const res = await authFetch(`/api/delete?pageId=${pageId}`, {
-                    method: 'DELETE'
-                });
+                const res = await authFetch(`/api/delete?pageId=${pageId}`, { method: 'DELETE' });
                 if (res.status === 401) {
                     alert('登录已过期，请重新登录');
                     sessionStorage.removeItem('adminPassword');
@@ -425,18 +433,16 @@
             }
         }
 
-        // ---------- 批量添加外链（仅管理员） ----------
+        // ---------- 添加外链 ----------
         async function addUrls() {
             const text = document.getElementById('urlInput').value;
             const urls = text.split('\n').map(s => s.trim()).filter(s => s);
             if (urls.length === 0) return alert('请在文本框中粘贴图片链接');
-
             if (!confirm(`确定要添加 ${urls.length} 张图片到 Notion 吗？`)) return;
 
             const btn = event.target;
             btn.disabled = true;
             btn.innerText = '导入中...';
-
             try {
                 const res = await authFetch('/api/add', {
                     method: 'POST',
@@ -465,19 +471,16 @@
             btn.innerText = '导入外链';
         }
 
-        // ---------- 处理上传文件（仅管理员） ----------
+        // ---------- 上传文件 ----------
         async function handleFiles(files) {
             const apiKey = document.getElementById('imgbbKey').value.trim();
-            if (!apiKey) {
-                return alert('请先输入 ImgBB API Key（免费申请：https://api.imgbb.com/）');
-            }
+            if (!apiKey) return alert('请先输入 ImgBB API Key（免费申请：https://api.imgbb.com/）');
 
             const fileArray = Array.from(files);
             if (fileArray.length === 0) return;
 
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.innerText = `正在上传 ${fileArray.length} 张图片到图床...`;
-
             const uploadedUrls = [];
 
             for (let i = 0; i < fileArray.length; i++) {
@@ -485,19 +488,12 @@
                 const formData = new FormData();
                 formData.append('key', apiKey);
                 formData.append('image', file);
-
                 try {
                     statusDiv.innerText = `上传进度: ${i + 1}/${fileArray.length} (${file.name})`;
-                    const res = await fetch('https://api.imgbb.com/1/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
                     const data = await res.json();
-                    if (data.success) {
-                        uploadedUrls.push(data.data.url);
-                    } else {
-                        console.warn('上传失败:', file.name, data.error);
-                    }
+                    if (data.success) uploadedUrls.push(data.data.url);
+                    else console.warn('上传失败:', file.name, data.error);
                 } catch (err) {
                     console.warn('上传异常:', file.name, err);
                 }
@@ -509,7 +505,6 @@
             }
 
             statusDiv.innerText = `图床上传完成，正在导入 Notion...`;
-
             try {
                 const res = await authFetch('/api/add', {
                     method: 'POST',
@@ -531,6 +526,5 @@
             }
         }
     </script>
-
 </body>
 </html>
