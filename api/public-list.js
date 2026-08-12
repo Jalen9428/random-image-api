@@ -1,13 +1,3 @@
-// 从页面对象中提取标题文本
-function getTitleFromPage(page) {
-    for (const [key, prop] of Object.entries(page.properties)) {
-        if (prop.type === 'title') {
-            return prop.title.map(t => t.plain_text).join('') || '未命名';
-        }
-    }
-    return '未命名';
-}
-
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
@@ -39,7 +29,8 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
-            const fileName = getTitleFromPage(page);
+            const titleProp = page.properties['名称'] || page.properties['Name'];
+            const fileName = titleProp?.title?.[0]?.plain_text || '未命名';
 
             const filesProperty = page.properties['Image'];
             let urls = [];
