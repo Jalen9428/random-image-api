@@ -5,27 +5,6 @@ function checkAuth(req) {
     return provided === adminPassword;
 }
 
-// 获取数据库标题属性名称
-async function getTitlePropertyName(databaseId, apiKey) {
-    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Notion-Version': '2022-06-28',
-        }
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || '获取数据库信息失败');
-    }
-    const data = await response.json();
-    for (const [key, prop] of Object.entries(data.properties)) {
-        if (prop.type === 'title') {
-            return key;
-        }
-    }
-    throw new Error('未找到标题属性');
-}
-
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
@@ -44,6 +23,24 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: '缺少环境变量配置' });
     }
 
+    // 获取数据库的标题属性名
+    let titlePropName = '名称'; // 默认
+    try {
+        const dbRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Notion-Version': '2022-06-28'
+            }
+        });
+        const dbData = await dbRes.json();
+        if (dbRes.ok) {
+            const titleProp = Object.values(dbData.properties).find(p => p.type === 'title');
+            if (titleProp) titlePropName = titleProp.name;
+        }
+    } catch (e) {
+        console.warn('无法获取数据库标题属性，使用默认值 "名称"', e);
+    }
+
     const { urls } = req.body;
 
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
@@ -56,40 +53,14 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: '没有有效的图片链接' });
     }
 
-    // 获取标题属性名
-    let titlePropertyName;
-    try {
-        titlePropertyName = await getTitlePropertyName(databaseId, apiKey);
-    } catch (err) {
-        return res.status(500).json({ error: '获取数据库标题属性失败', detail: err.message });
-    }
-
     const results = [];
     const errors = [];
 
     for (let i = 0; i < validUrls.length; i++) {
         const url = validUrls[i];
-        const fileName = url.split('/').pop().split('?')[0].substring(0, 50) || `图片_${i + 1}`;
+        const fileName = url.split('/').pop().substring(0, 50) || `图片_${i + 1}`;
 
         try {
-            const payload = {
-                parent: { database_id: databaseId },
-                properties: {
-                    // 动态使用标题属性名
-                    [titlePropertyName]: {
-                        title: [{ text: { content: fileName } }]
-                    },
-                    'Image': {
-                        files: [
-                            {
-                                name: fileName,
-                                external: { url: url }
-                            }
-                        ]
-                    }
-                }
-            };
-
             const response = await fetch(`https://api.notion.com/v1/pages`, {
                 method: 'POST',
                 headers: {
@@ -97,7 +68,22 @@ module.exports = async (req, res) => {
                     'Notion-Version': '2022-06-28',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    parent: { database_id: databaseId },
+                    properties: {
+                        [titlePropName]: {
+                            title: [{ text: { content: fileName } }]
+                        },
+                        'Image': {
+                            files: [
+                                {
+                                    name: fileName,
+                                    external: { url: url }
+                                }
+                            ]
+                        }
+                    }
+                })
             });
 
             const data = await response.json();
