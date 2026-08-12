@@ -1,7 +1,18 @@
+function checkAuth(req) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) return true;
+    const provided = req.headers['x-admin-password'];
+    return provided === adminPassword;
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-    // 仅接受 POST 请求
+    // 验证权限
+    if (!checkAuth(req)) {
+        return res.status(401).json({ error: '未授权，请提供正确密码' });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -19,7 +30,6 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: '请提供至少一个图片 URL' });
     }
 
-    // 简单校验 URL 格式
     const validUrls = urls.filter(u => u.startsWith('http://') || u.startsWith('https://'));
 
     if (validUrls.length === 0) {
@@ -29,10 +39,8 @@ module.exports = async (req, res) => {
     const results = [];
     const errors = [];
 
-    // 循环添加，为避免 Notion 速率限制（3次/秒），加延迟
     for (let i = 0; i < validUrls.length; i++) {
         const url = validUrls[i];
-        // 从 URL 中提取文件名
         const fileName = url.split('/').pop().substring(0, 50) || `图片_${i + 1}`;
 
         try {
@@ -53,7 +61,7 @@ module.exports = async (req, res) => {
                             files: [
                                 {
                                     name: fileName,
-                                    external: { url: url } // 存为外链
+                                    external: { url: url }
                                 }
                             ]
                         }
@@ -69,7 +77,6 @@ module.exports = async (req, res) => {
                 results.push({ url, id: data.id });
             }
 
-            // 延迟 400ms，防止触发 Notion 限流
             if (i < validUrls.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 400));
             }
