@@ -1,4 +1,17 @@
+// 验证函数
+function checkAuth(req) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) return true;
+    const provided = req.headers['x-admin-password'];
+    return provided === adminPassword;
+}
+
 module.exports = async (req, res) => {
+    // 先验证权限
+    if (!checkAuth(req)) {
+        return res.status(401).json({ error: '未授权，请提供正确密码' });
+    }
+
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
     const apiKey = process.env.NOTION_API_KEY;
@@ -16,7 +29,7 @@ module.exports = async (req, res) => {
                 'Notion-Version': '2022-06-28',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ page_size: 100 }) // 最多返回 100 张，可修改
+            body: JSON.stringify({ page_size: 100 })
         });
 
         const data = await response.json();
@@ -29,11 +42,9 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
-            // 获取图片名称（Notion 默认第一列是 Name）
             const nameProperty = page.properties['Name'];
             const fileName = nameProperty?.title?.[0]?.plain_text || '未命名';
 
-            // 获取图片 URL
             const filesProperty = page.properties['Image'];
             let urls = [];
             if (filesProperty && filesProperty.type === 'files') {
@@ -46,8 +57,8 @@ module.exports = async (req, res) => {
             imageList.push({
                 id: page.id,
                 name: fileName,
-                urls: urls, // 一列可能存多张图，这里返回数组
-                cover: urls[0] || null // 取第一张作为封面预览
+                urls: urls,
+                cover: urls[0] || null
             });
         }
 
