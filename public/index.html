@@ -71,6 +71,28 @@
         .card:hover .download-btn { opacity: 1; }
         .card .download-btn:hover { background: rgba(0,0,0,0.8); }
 
+        .card .rename-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card:hover .rename-btn { opacity: 1; }
+        .card .rename-btn:hover { background: rgba(0,0,0,0.8); }
+
         .admin-only { display: none; }
         .admin-only.visible { display: block; }
     </style>
@@ -181,6 +203,34 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+
+        // ---------- 重命名功能 ----------
+        async function renameImage(pageId, currentName) {
+            const newName = prompt('请输入新的图片名称：', currentName);
+            if (newName === null || newName.trim() === '') return;
+            try {
+                const res = await authFetch('/api/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageId, newName: newName.trim() })
+                });
+                if (res.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    sessionStorage.removeItem('adminPassword');
+                    location.reload();
+                    return;
+                }
+                const data = await res.json();
+                if (res.ok) {
+                    alert('重命名成功');
+                    fetchList();
+                } else {
+                    alert('重命名失败: ' + (data.detail || data.error));
+                }
+            } catch (err) {
+                alert('网络错误: ' + err.message);
+            }
         }
 
         // ---------- 初始化 ----------
@@ -316,7 +366,10 @@
                         ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` : 
                         `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">无预览</div>`}
                         <div class="p-2 text-xs truncate text-gray-600" title="${item.name}">${item.name}</div>
-                        ${isAdmin ? `<button class="delete-btn" data-id="${item.id}" data-name="${item.name.replace(/'/g, "\\'")}" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>` : ''}
+                        ${isAdmin ? `
+                            <button class="rename-btn" onclick="renameImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">✏️</button>
+                            <button class="delete-btn" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>
+                        ` : ''}
                         <button class="download-btn" onclick="downloadImage('${item.cover}')">⬇ 下载</button>
                     </div>
                 `).join('');
@@ -379,7 +432,8 @@
                 }
                 const data = await res.json();
                 if (res.ok) {
-                    alert(`成功导入 ${data.success} 张，失败 ${data.failed} 张`);
+                    alert(`成功导入 ${data.success} 张，失败 ${data.failed} 张` +
+                          (data.errors && data.errors.length ? '\n\n错误详情：' + JSON.stringify(data.errors, null, 2) : ''));
                     document.getElementById('urlInput').value = '';
                     fetchList();
                 } else {
@@ -450,7 +504,8 @@
                     return;
                 }
                 const data = await res.json();
-                statusDiv.innerText = `导入完成：成功 ${data.success} 张，失败 ${data.failed} 张`;
+                statusDiv.innerText = `导入完成：成功 ${data.success} 张，失败 ${data.failed} 张` +
+                                      (data.errors && data.errors.length ? '\n\n错误详情：' + JSON.stringify(data.errors, null, 2) : '');
                 fetchList();
             } catch (err) {
                 statusDiv.innerText = '导入 Notion 失败: ' + err.message;
