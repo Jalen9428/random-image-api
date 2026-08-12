@@ -5,16 +5,6 @@ function checkAuth(req) {
     return provided === adminPassword;
 }
 
-// 从页面对象中提取标题文本
-function getTitleFromPage(page) {
-    for (const [key, prop] of Object.entries(page.properties)) {
-        if (prop.type === 'title') {
-            return prop.title.map(t => t.plain_text).join('') || '未命名';
-        }
-    }
-    return '未命名';
-}
-
 module.exports = async (req, res) => {
     if (!checkAuth(req)) {
         return res.status(401).json({ error: '未授权，请提供正确密码' });
@@ -50,7 +40,9 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
-            const fileName = getTitleFromPage(page);
+            // 兼容 Name 和 名称
+            const titleProp = page.properties['名称'] || page.properties['Name'];
+            const fileName = titleProp?.title?.[0]?.plain_text || '未命名';
 
             const filesProperty = page.properties['Image'];
             let urls = [];
