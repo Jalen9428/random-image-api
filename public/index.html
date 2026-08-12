@@ -28,11 +28,10 @@
             max-width: 400px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
+        .login-box .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .login-box .btn-group button { flex: 1; min-width: 100px; }
 
-        /* 卡片上的删除按钮 */
-        .card {
-            position: relative;
-        }
+        .card { position: relative; }
         .card .delete-btn {
             position: absolute;
             top: 8px;
@@ -49,13 +48,31 @@
             cursor: pointer;
             opacity: 0;
             transition: opacity 0.2s;
+            z-index: 2;
         }
-        .card:hover .delete-btn {
-            opacity: 1;
+        .card:hover .delete-btn { opacity: 1; }
+        .card .delete-btn:hover { background: red; }
+
+        .card .download-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
         }
-        .card .delete-btn:hover {
-            background: red;
-        }
+        .card:hover .download-btn { opacity: 1; }
+        .card .download-btn:hover { background: rgba(0,0,0,0.8); }
+
+        .admin-only { display: none; }
+        .admin-only.visible { display: block; }
     </style>
 </head>
 <body class="bg-gray-50 p-6">
@@ -64,9 +81,12 @@
     <div id="loginOverlay">
         <div class="login-box">
             <h2 class="text-2xl font-bold mb-4">🔐 管理面板登录</h2>
-            <p class="text-gray-600 mb-4">请输入管理员密码</p>
+            <p class="text-gray-600 mb-4">请输入管理员密码，或以访客身份预览图库</p>
             <input id="passwordInput" type="password" placeholder="请输入密码" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button id="loginBtn" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition">登录</button>
+            <div class="btn-group">
+                <button id="loginBtn" class="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">登录</button>
+                <button id="guestBtn" class="bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition">以访客身份查看图库</button>
+            </div>
             <p id="loginError" class="text-red-500 text-sm mt-2 hidden">密码错误，请重试</p>
         </div>
     </div>
@@ -86,30 +106,33 @@
             </div>
         </div>
 
-        <!-- 添加图片区域 -->
-        <div class="bg-white rounded-xl shadow p-6 mb-6">
-            <h2 class="text-lg font-semibold mb-4">📤 添加图片到 Notion</h2>
+        <!-- 管理功能区域（仅管理员可见） -->
+        <div id="adminArea" class="admin-only">
+            <!-- 添加图片区域 -->
+            <div class="bg-white rounded-xl shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4">📤 添加图片到 Notion</h2>
 
-            <!-- 方式1：批量粘贴外链 -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">批量粘贴外链（每行一个）</label>
-                <textarea id="urlInput" rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png"></textarea>
-                <button onclick="addUrls()" class="mt-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">导入外链</button>
-            </div>
-
-            <hr class="my-4">
-
-            <!-- 方式2：上传图片文件 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
-                <div class="flex flex-wrap gap-3 items-center">
-                    <input id="imgbbKey" type="text" placeholder="请输入 ImgBB API Key" class="border border-gray-300 rounded-lg p-2 flex-1 min-w-[200px]" />
-                    <div class="drop-area flex-1 p-2" id="dropArea">
-                        <p class="text-gray-500">拖拽图片到这里，或 <span class="text-blue-500">点击选择</span></p>
-                        <input id="fileInput" type="file" multiple accept="image/*" class="hidden" />
-                    </div>
+                <!-- 方式1：批量粘贴外链 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">批量粘贴外链（每行一个）</label>
+                    <textarea id="urlInput" rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png"></textarea>
+                    <button onclick="addUrls()" class="mt-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">导入外链</button>
                 </div>
-                <div id="uploadStatus" class="mt-2 text-sm text-gray-500"></div>
+
+                <hr class="my-4">
+
+                <!-- 方式2：上传图片文件 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <input id="imgbbKey" type="text" placeholder="请输入 ImgBB API Key" class="border border-gray-300 rounded-lg p-2 flex-1 min-w-[200px]" />
+                        <div class="drop-area flex-1 p-2" id="dropArea">
+                            <p class="text-gray-500">拖拽图片到这里，或 <span class="text-blue-500">点击选择</span></p>
+                            <input id="fileInput" type="file" multiple accept="image/*" class="hidden" />
+                        </div>
+                    </div>
+                    <div id="uploadStatus" class="mt-2 text-sm text-gray-500"></div>
+                </div>
             </div>
         </div>
 
@@ -126,7 +149,10 @@
     </div>
 
     <script>
-        // 获取存储的密码（sessionStorage）
+        // ---------- 全局状态 ----------
+        let isAdmin = false;
+
+        // ---------- 密码管理 ----------
         function getAdminPassword() {
             return sessionStorage.getItem('adminPassword') || '';
         }
@@ -135,7 +161,7 @@
             sessionStorage.setItem('adminPassword', pwd);
         }
 
-        // 带密码头的 fetch 封装
+        // ---------- 带密码头的 fetch ----------
         async function authFetch(url, options = {}) {
             const headers = options.headers || {};
             const password = getAdminPassword();
@@ -146,9 +172,20 @@
             return fetch(url, options);
         }
 
-        // 初始化
+        // ---------- 下载功能 ----------
+        function downloadImage(url) {
+            const downloadUrl = `/api/download?url=${encodeURIComponent(url)}`;
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // ---------- 初始化 ----------
         document.addEventListener('DOMContentLoaded', async () => {
-            // 先检查是否需要密码
+            // 检查是否需要密码
             try {
                 const res = await fetch('/api/check-auth');
                 const data = await res.json();
@@ -156,15 +193,18 @@
                     document.getElementById('loginOverlay').classList.remove('hidden');
                     document.getElementById('mainContent').classList.add('hidden');
                 } else {
+                    // 无密码，直接以管理员身份进入
+                    isAdmin = true;
                     document.getElementById('loginOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
+                    document.getElementById('adminArea').classList.add('visible');
                     initApp();
                 }
             } catch (err) {
                 alert('检查授权状态失败: ' + err.message);
             }
 
-            // 登录按钮事件
+            // 登录按钮
             document.getElementById('loginBtn').addEventListener('click', async () => {
                 const pwd = document.getElementById('passwordInput').value;
                 if (!pwd) return;
@@ -177,8 +217,10 @@
                     const data = await res.json();
                     if (data.success) {
                         setAdminPassword(pwd);
+                        isAdmin = true;
                         document.getElementById('loginOverlay').classList.add('hidden');
                         document.getElementById('mainContent').classList.remove('hidden');
+                        document.getElementById('adminArea').classList.add('visible');
                         document.getElementById('loginError').classList.add('hidden');
                         initApp();
                     } else {
@@ -189,13 +231,22 @@
                 }
             });
 
+            // 访客按钮
+            document.getElementById('guestBtn').addEventListener('click', () => {
+                isAdmin = false;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                document.getElementById('adminArea').classList.remove('visible');
+                initApp();
+            });
+
             // 回车登录
             document.getElementById('passwordInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('loginBtn').click();
             });
         });
 
-        // 初始化应用
+        // ---------- 应用初始化 ----------
         function initApp() {
             const savedTitle = localStorage.getItem('siteTitle') || '我的随机图库';
             document.getElementById('siteTitle').value = savedTitle;
@@ -213,6 +264,7 @@
                 localStorage.setItem('imgbbKey', e.target.value);
             });
 
+            // 文件拖拽 / 点击（仅管理员可用，但功能仍在）
             const dropArea = document.getElementById('dropArea');
             const fileInput = document.getElementById('fileInput');
 
@@ -230,11 +282,14 @@
             fetchList();
         }
 
-        // 获取并渲染列表
+        // ---------- 获取并渲染列表 ----------
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
             try {
-                const res = await authFetch('/api/list');
+                // 根据角色选择接口
+                const endpoint = isAdmin ? '/api/list' : '/api/public-list';
+                const fetcher = isAdmin ? authFetch : fetch;
+                const res = await fetcher(endpoint);
                 if (!res.ok) {
                     if (res.status === 401) {
                         alert('登录已过期，请重新登录');
@@ -261,7 +316,8 @@
                         ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` : 
                         `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">无预览</div>`}
                         <div class="p-2 text-xs truncate text-gray-600" title="${item.name}">${item.name}</div>
-                        <button class="delete-btn" data-id="${item.id}" data-name="${item.name}" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>
+                        ${isAdmin ? `<button class="delete-btn" data-id="${item.id}" data-name="${item.name.replace(/'/g, "\\'")}" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>` : ''}
+                        <button class="download-btn" onclick="downloadImage('${item.cover}')">⬇ 下载</button>
                     </div>
                 `).join('');
 
@@ -271,7 +327,7 @@
             document.getElementById('loadingTip').style.display = 'none';
         }
 
-        // 删除图片
+        // ---------- 删除图片（仅管理员） ----------
         async function deleteImage(pageId, fileName) {
             if (!confirm(`确定要删除图片“${fileName}”吗？此操作不可恢复！`)) return;
 
@@ -288,7 +344,7 @@
                 const data = await res.json();
                 if (res.ok) {
                     alert('删除成功');
-                    fetchList(); // 刷新列表
+                    fetchList();
                 } else {
                     alert('删除失败: ' + (data.detail || data.error));
                 }
@@ -297,7 +353,7 @@
             }
         }
 
-        // 批量添加外链
+        // ---------- 批量添加外链（仅管理员） ----------
         async function addUrls() {
             const text = document.getElementById('urlInput').value;
             const urls = text.split('\n').map(s => s.trim()).filter(s => s);
@@ -336,7 +392,7 @@
             btn.innerText = '导入外链';
         }
 
-        // 处理上传的图片文件
+        // ---------- 处理上传文件（仅管理员） ----------
         async function handleFiles(files) {
             const apiKey = document.getElementById('imgbbKey').value.trim();
             if (!apiKey) {
