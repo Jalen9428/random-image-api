@@ -28,6 +28,34 @@
             max-width: 400px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
+
+        /* 卡片上的删除按钮 */
+        .card {
+            position: relative;
+        }
+        .card .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            line-height: 28px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .card:hover .delete-btn {
+            opacity: 1;
+        }
+        .card .delete-btn:hover {
+            background: red;
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-6">
@@ -229,10 +257,11 @@
                 }
 
                 grid.innerHTML = data.data.map(item => `
-                    <div class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white">
+                    <div class="card border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white">
                         ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` : 
                         `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">无预览</div>`}
                         <div class="p-2 text-xs truncate text-gray-600" title="${item.name}">${item.name}</div>
+                        <button class="delete-btn" data-id="${item.id}" data-name="${item.name}" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>
                     </div>
                 `).join('');
 
@@ -240,6 +269,32 @@
                 alert('加载列表失败: ' + err.message);
             }
             document.getElementById('loadingTip').style.display = 'none';
+        }
+
+        // 删除图片
+        async function deleteImage(pageId, fileName) {
+            if (!confirm(`确定要删除图片“${fileName}”吗？此操作不可恢复！`)) return;
+
+            try {
+                const res = await authFetch(`/api/delete?pageId=${pageId}`, {
+                    method: 'DELETE'
+                });
+                if (res.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    sessionStorage.removeItem('adminPassword');
+                    location.reload();
+                    return;
+                }
+                const data = await res.json();
+                if (res.ok) {
+                    alert('删除成功');
+                    fetchList(); // 刷新列表
+                } else {
+                    alert('删除失败: ' + (data.detail || data.error));
+                }
+            } catch (err) {
+                alert('网络错误: ' + err.message);
+            }
         }
 
         // 批量添加外链
