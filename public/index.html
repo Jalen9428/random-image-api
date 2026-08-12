@@ -95,6 +95,14 @@
 
         .admin-only { display: none; }
         .admin-only.visible { display: block; }
+
+        /* 禁用输入框样式 */
+        input:disabled {
+            background: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+            border-bottom-color: #d1d5db !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-6">
@@ -298,17 +306,28 @@
 
         // ---------- 应用初始化 ----------
         function initApp() {
+            const siteTitleInput = document.getElementById('siteTitle');
             const savedTitle = localStorage.getItem('siteTitle') || '我的随机图库';
-            document.getElementById('siteTitle').value = savedTitle;
+            siteTitleInput.value = savedTitle;
             document.title = savedTitle;
+
+            // 根据权限控制标题编辑
+            siteTitleInput.disabled = !isAdmin;
+            if (!isAdmin) {
+                siteTitleInput.title = '访客模式不可修改标题';
+            } else {
+                siteTitleInput.title = '';
+            }
 
             const savedKey = localStorage.getItem('imgbbKey') || '';
             document.getElementById('imgbbKey').value = savedKey;
 
-            document.getElementById('siteTitle').addEventListener('input', (e) => {
+            // 标题输入事件（仅管理员有效）
+            siteTitleInput.oninput = function(e) {
+                if (!isAdmin) return;
                 localStorage.setItem('siteTitle', e.target.value);
                 document.title = e.target.value;
-            });
+            };
 
             document.getElementById('imgbbKey').addEventListener('input', (e) => {
                 localStorage.setItem('imgbbKey', e.target.value);
