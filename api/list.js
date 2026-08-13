@@ -40,12 +40,20 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
+            // 检查是否有 Image 列且包含文件
+            const filesProperty = page.properties['Image'];
+            let hasImage = false;
+            if (filesProperty && filesProperty.type === 'files') {
+                if (filesProperty.files && filesProperty.files.length > 0) {
+                    hasImage = true;
+                }
+            }
+            // 如果没有图片文件，跳过此记录（通常是配置记录，如 site_title）
+            if (!hasImage) continue;
+
             const titleProp = page.properties['名称'] || page.properties['Name'];
             const fileName = titleProp?.title?.[0]?.plain_text || '未命名';
-            // 跳过配置记录（site_title）
-            if (fileName === 'site_title') continue;
 
-            const filesProperty = page.properties['Image'];
             let urls = [];
             if (filesProperty && filesProperty.type === 'files') {
                 for (const file of filesProperty.files) {
