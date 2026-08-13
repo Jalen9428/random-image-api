@@ -29,12 +29,18 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
+            const filesProperty = page.properties['Image'];
+            let hasImage = false;
+            if (filesProperty && filesProperty.type === 'files') {
+                if (filesProperty.files && filesProperty.files.length > 0) {
+                    hasImage = true;
+                }
+            }
+            if (!hasImage) continue;
+
             const titleProp = page.properties['名称'] || page.properties['Name'];
             const fileName = titleProp?.title?.[0]?.plain_text || '未命名';
-            // 跳过配置记录
-            if (fileName === 'site_title') continue;
 
-            const filesProperty = page.properties['Image'];
             let urls = [];
             if (filesProperty && filesProperty.type === 'files') {
                 for (const file of filesProperty.files) {
