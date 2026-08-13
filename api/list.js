@@ -40,9 +40,10 @@ module.exports = async (req, res) => {
         const imageList = [];
 
         for (const page of pages) {
-            // 兼容 Name 和 名称
             const titleProp = page.properties['名称'] || page.properties['Name'];
             const fileName = titleProp?.title?.[0]?.plain_text || '未命名';
+            // 跳过配置记录（site_title）
+            if (fileName === 'site_title') continue;
 
             const filesProperty = page.properties['Image'];
             let urls = [];
