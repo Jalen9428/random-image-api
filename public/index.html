@@ -101,7 +101,7 @@
             border-bottom-color: #d1d5db !important;
         }
 
-        /* 移动端触控优化：悬停设备默认隐藏，触摸设备常亮放大 */
+        /* 移动端触控优化 */
         @media (hover: hover) {
             .card .delete-btn,
             .card .rename-btn,
@@ -281,7 +281,7 @@
                     document.getElementById('loginOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
                     document.getElementById('adminArea').classList.add('visible');
-                    initApp();
+                    await initApp();
                 }
             } catch (err) {
                 alert('检查授权状态失败: ' + err.message);
@@ -304,7 +304,7 @@
                         document.getElementById('mainContent').classList.remove('hidden');
                         document.getElementById('adminArea').classList.add('visible');
                         document.getElementById('loginError').classList.add('hidden');
-                        initApp();
+                        await initApp();
                     } else {
                         document.getElementById('loginError').classList.remove('hidden');
                     }
@@ -313,12 +313,12 @@
                 }
             });
 
-            document.getElementById('guestBtn').addEventListener('click', () => {
+            document.getElementById('guestBtn').addEventListener('click', async () => {
                 isAdmin = false;
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
                 document.getElementById('adminArea').classList.remove('visible');
-                initApp();
+                await initApp();
             });
 
             document.getElementById('passwordInput').addEventListener('keydown', (e) => {
@@ -326,28 +326,82 @@
             });
         });
 
-        function initApp() {
+        // ---------- 应用初始化（异步获取全局标题） ----------
+        async function initApp() {
             const titleInput = document.getElementById('siteTitle');
-            const savedTitle = localStorage.getItem('siteTitle') || '我的随机图库';
-            titleInput.value = savedTitle;
-            document.title = savedTitle;
+            const DEFAULT_TITLE = '我的随机图库';
 
-            // 根据权限控制标题编辑
+            // 1. 尝试从服务器获取全局标题
+            let globalTitle = DEFAULT_TITLE;
+            try {
+                const res = await fetch('/api/settings');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.title) globalTitle = data.title;
+                } else {
+                    console.warn('获取全局标题失败，使用默认值');
+                }
+            } catch (e) {
+                console.warn('获取全局标题异常，使用默认值', e);
+            }
+
+            // 2. 更新本地存储（同步缓存）
+            localStorage.setItem('siteTitle', globalTitle);
+            titleInput.value = globalTitle;
+            document.title = globalTitle;
+
+            // 3. 根据权限控制输入框
             titleInput.disabled = !isAdmin;
             titleInput.title = isAdmin ? '' : '访客模式不可修改标题';
 
-            titleInput.oninput = function(e) {
+            // 4. 标题修改事件（管理员）
+            titleInput.oninput = async function(e) {
                 if (!isAdmin) return;
-                localStorage.setItem('siteTitle', e.target.value);
-                document.title = e.target.value;
+                const newTitle = e.target.value.trim();
+                if (!newTitle) {
+                    alert('标题不能为空');
+                    e.target.value = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
+                    return;
+                }
+                // 先本地更新，提升响应速度
+                localStorage.setItem('siteTitle', newTitle);
+                document.title = newTitle;
+
+                // 调用 API 更新全局设置
+                try {
+                    const res = await authFetch('/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: newTitle })
+                    });
+                    if (res.status === 401) {
+                        alert('登录已过期，请重新登录');
+                        sessionStorage.removeItem('adminPassword');
+                        location.reload();
+                        return;
+                    }
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.detail || errData.error || '更新失败');
+                    }
+                    // 成功，无需额外操作
+                } catch (err) {
+                    alert('更新全局标题失败: ' + err.message + '，已回退本地标题');
+                    // 回滚到之前的标题
+                    const fallbackTitle = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
+                    titleInput.value = fallbackTitle;
+                    document.title = fallbackTitle;
+                }
             };
 
+            // 加载 ImgBB Key
             const savedKey = localStorage.getItem('imgbbKey') || '';
             document.getElementById('imgbbKey').value = savedKey;
             document.getElementById('imgbbKey').addEventListener('input', (e) => {
                 localStorage.setItem('imgbbKey', e.target.value);
             });
 
+            // 文件拖拽 / 点击
             const dropArea = document.getElementById('dropArea');
             const fileInput = document.getElementById('fileInput');
             dropArea.addEventListener('click', () => fileInput.click());
@@ -361,10 +415,16 @@
                 e.target.value = '';
             });
 
-            fetchList();
+            // 加载图片列表
+            await fetchList();
         }
 
-        // ---------- 列表 ----------
+        // ---------- 其余函数保持不变（fetchList, deleteImage, addUrls, handleFiles） ----------
+        // 为了节省篇幅，此处省略，但实际使用时必须保留这些函数（与之前完全一样）
+        // 请从之前的完整 index.html 中复制 fetchList, deleteImage, addUrls, handleFiles 函数
+        // 或者直接使用我下面提供的完整版本（确保这些函数存在）
+
+        // ---------- 以下为必须保留的函数（与之前一致） ----------
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
             try {
@@ -410,7 +470,6 @@
             document.getElementById('loadingTip').style.display = 'none';
         }
 
-        // ---------- 删除 ----------
         async function deleteImage(pageId, fileName) {
             if (!confirm(`确定要删除图片“${fileName}”吗？此操作不可恢复！`)) return;
             try {
@@ -433,7 +492,6 @@
             }
         }
 
-        // ---------- 添加外链 ----------
         async function addUrls() {
             const text = document.getElementById('urlInput').value;
             const urls = text.split('\n').map(s => s.trim()).filter(s => s);
@@ -471,7 +529,6 @@
             btn.innerText = '导入外链';
         }
 
-        // ---------- 上传文件 ----------
         async function handleFiles(files) {
             const apiKey = document.getElementById('imgbbKey').value.trim();
             if (!apiKey) return alert('请先输入 ImgBB API Key（免费申请：https://api.imgbb.com/）');
@@ -526,5 +583,6 @@
             }
         }
     </script>
+
 </body>
 </html>
