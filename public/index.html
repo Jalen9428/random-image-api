@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>随机图库管理后台</title>
+    <title id="pageTitle">随机图库管理后台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .image-grid img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; }
@@ -101,6 +101,20 @@
             border-bottom-color: #d1d5db !important;
         }
 
+        .lang-btn {
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
         /* 移动端触控优化 */
         @media (hover: hover) {
             .card .delete-btn,
@@ -146,56 +160,64 @@
     <!-- 登录遮罩 -->
     <div id="loginOverlay">
         <div class="login-box">
-            <h2 class="text-2xl font-bold mb-4">🔐 管理面板登录</h2>
-            <p class="text-gray-600 mb-4">请输入管理员密码，或以访客身份预览图库</p>
+            <h2 id="loginTitle" class="text-2xl font-bold mb-4">🔐 管理面板登录</h2>
+            <p id="loginSub" class="text-gray-600 mb-4">请输入管理员密码，或以访客身份预览图库</p>
             <input id="passwordInput" type="password" placeholder="请输入密码" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 outline-none" />
             <div class="btn-group">
                 <button id="loginBtn" class="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">登录</button>
                 <button id="guestBtn" class="bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition">以访客身份查看图库</button>
             </div>
             <p id="loginError" class="text-red-500 text-sm mt-2 hidden">密码错误，请重试</p>
+            <div class="mt-4 text-right">
+                <button class="lang-btn active" data-lang="zh">中文</button>
+                <button class="lang-btn" data-lang="en">English</button>
+            </div>
         </div>
     </div>
 
     <!-- 主界面 -->
     <div id="mainContent" class="max-w-6xl mx-auto hidden">
 
-        <!-- 标题个性化（增加保存按钮） -->
+        <!-- 标题 + 语言切换 -->
         <div class="bg-white rounded-xl shadow p-6 mb-6 flex justify-between items-center flex-wrap gap-4">
             <div class="flex items-center gap-3 flex-wrap">
                 <div>
-                    <label class="text-sm text-gray-500">网站标题</label>
+                    <label id="titleLabel" class="text-sm text-gray-500">网站标题</label>
                     <input id="siteTitle" type="text" placeholder="输入你的图库名称" class="text-2xl font-bold border-b-2 border-transparent focus:border-blue-500 outline-none px-2 py-1 w-64" />
                 </div>
                 <button id="saveTitleBtn" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>保存标题</button>
             </div>
-            <div class="flex gap-3">
-                <button onclick="fetchList()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">刷新列表</button>
-                <button onclick="window.location.href='/api/random'" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">访问随机 API</button>
+            <div class="flex gap-3 items-center">
+                <button onclick="fetchList()" id="refreshBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">刷新列表</button>
+                <button onclick="window.location.href='/api/random'" id="apiBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">访问随机 API</button>
+                <div>
+                    <button class="lang-btn active" data-lang="zh">中文</button>
+                    <button class="lang-btn" data-lang="en">English</button>
+                </div>
             </div>
         </div>
 
         <!-- 管理功能区域（仅管理员可见） -->
         <div id="adminArea" class="admin-only">
             <div class="bg-white rounded-xl shadow p-6 mb-6">
-                <h2 class="text-lg font-semibold mb-4">📤 添加图片到 Notion</h2>
+                <h2 id="addTitle" class="text-lg font-semibold mb-4">📤 添加图片到 Notion</h2>
 
                 <!-- 批量外链 -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">批量粘贴外链（每行一个）</label>
+                    <label id="batchLabel" class="block text-sm font-medium text-gray-700 mb-1">批量粘贴外链（每行一个）</label>
                     <textarea id="urlInput" rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png"></textarea>
-                    <button onclick="addUrls()" class="mt-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">导入外链</button>
+                    <button id="importBtn" onclick="addUrls()" class="mt-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">导入外链</button>
                 </div>
 
                 <hr class="my-4">
 
                 <!-- 文件上传 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
+                    <label id="uploadLabel" class="block text-sm font-medium text-gray-700 mb-1">上传图片文件（需免费图床密钥）</label>
                     <div class="flex flex-wrap gap-3 items-center">
                         <input id="imgbbKey" type="text" placeholder="请输入 ImgBB API Key" class="border border-gray-300 rounded-lg p-2 flex-1 min-w-[200px]" />
                         <div class="drop-area flex-1 p-2" id="dropArea">
-                            <p class="text-gray-500">拖拽图片到这里，或 <span class="text-blue-500">点击选择</span></p>
+                            <p id="dropText" class="text-gray-500">拖拽图片到这里，或 <span class="text-blue-500">点击选择</span></p>
                             <input id="fileInput" type="file" multiple accept="image/*" class="hidden" />
                         </div>
                     </div>
@@ -207,7 +229,7 @@
         <!-- 图片列表 -->
         <div class="bg-white rounded-xl shadow p-6">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold">🖼️ 图片列表 (<span id="imageCount">0</span> 张)</h2>
+                <h2 id="listTitle" class="text-lg font-semibold">🖼️ 图片列表 (<span id="imageCount">0</span> 张)</h2>
                 <span id="loadingTip" class="text-sm text-gray-400">加载中...</span>
             </div>
             <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -217,8 +239,184 @@
     </div>
 
     <script>
-        // ---------- 全局 ----------
+        // ---------- 国际化文本 ----------
+        const i18n = {
+            zh: {
+                pageTitle: '随机图库管理后台',
+                loginTitle: '🔐 管理面板登录',
+                loginSub: '请输入管理员密码，或以访客身份预览图库',
+                passwordPlaceholder: '请输入密码',
+                loginBtn: '登录',
+                guestBtn: '以访客身份查看图库',
+                loginError: '密码错误，请重试',
+                titleLabel: '网站标题',
+                titlePlaceholder: '输入你的图库名称',
+                saveTitle: '保存标题',
+                refreshBtn: '刷新列表',
+                apiBtn: '访问随机 API',
+                addTitle: '📤 添加图片到 Notion',
+                batchLabel: '批量粘贴外链（每行一个）',
+                importBtn: '导入外链',
+                uploadLabel: '上传图片文件（需免费图床密钥）',
+                imgbbPlaceholder: '请输入 ImgBB API Key',
+                dropText: '拖拽图片到这里，或 <span class="text-blue-500">点击选择</span>',
+                listTitle: '🖼️ 图片列表',
+                loading: '加载中...',
+                empty: '暂无图片，快去添加吧！',
+                noPreview: '无预览',
+                download: '⬇ 下载',
+                deleteConfirm: (name) => `确定要删除图片“${name}”吗？此操作不可恢复！`,
+                deleteSuccess: '删除成功',
+                deleteFail: '删除失败',
+                renamePrompt: '请输入新的图片名称：',
+                renameSuccess: '重命名成功',
+                renameFail: '重命名失败',
+                titleEmpty: '标题不能为空',
+                titleSaveSuccess: '标题保存成功！',
+                titleSaveFail: '保存标题失败',
+                importConfirm: (n) => `确定要添加 ${n} 张图片到 Notion 吗？`,
+                importSuccess: (s, f) => `成功导入 ${s} 张，失败 ${f} 张`,
+                importFail: '导入失败',
+                uploadStart: (n) => `正在上传 ${n} 张图片到图床...`,
+                uploadProgress: (i, total, name) => `上传进度: ${i + 1}/${total} (${name})`,
+                uploadFail: '上传失败，请检查网络或密钥是否正确。',
+                imgbbRequired: '请先输入 ImgBB API Key（免费申请：https://api.imgbb.com/）',
+                notionImporting: '图床上传完成，正在导入 Notion...',
+                notionImportDone: (s, f) => `导入完成：成功 ${s} 张，失败 ${f} 张`,
+                sessionExpired: '登录已过期，请重新登录',
+                unauthorized: '未授权，请提供正确密码',
+                networkError: '网络错误',
+                guestTitleDisabled: '访客模式不可修改标题',
+                saveTitleDisabled: '访客模式不可修改标题',
+                deleteBtn: '×',
+                renameBtn: '✏️',
+            },
+            en: {
+                pageTitle: 'Random Image Gallery Admin',
+                loginTitle: '🔐 Admin Panel Login',
+                loginSub: 'Enter admin password, or view gallery as guest.',
+                passwordPlaceholder: 'Enter password',
+                loginBtn: 'Login',
+                guestBtn: 'Browse as Guest',
+                loginError: 'Incorrect password, please try again.',
+                titleLabel: 'Site Title',
+                titlePlaceholder: 'Enter your gallery name',
+                saveTitle: 'Save Title',
+                refreshBtn: 'Refresh',
+                apiBtn: 'Random API',
+                addTitle: '📤 Add Images to Notion',
+                batchLabel: 'Batch paste external links (one per line)',
+                importBtn: 'Import Links',
+                uploadLabel: 'Upload image files (requires free image host key)',
+                imgbbPlaceholder: 'Enter ImgBB API Key',
+                dropText: 'Drag & drop images here, or <span class="text-blue-500">click to select</span>',
+                listTitle: '🖼️ Image List',
+                loading: 'Loading...',
+                empty: 'No images yet, add some!',
+                noPreview: 'No preview',
+                download: '⬇ Download',
+                deleteConfirm: (name) => `Are you sure you want to delete "${name}"? This cannot be undone!`,
+                deleteSuccess: 'Deleted successfully',
+                deleteFail: 'Delete failed',
+                renamePrompt: 'Enter new name for the image:',
+                renameSuccess: 'Renamed successfully',
+                renameFail: 'Rename failed',
+                titleEmpty: 'Title cannot be empty',
+                titleSaveSuccess: 'Title saved successfully!',
+                titleSaveFail: 'Failed to save title',
+                importConfirm: (n) => `Are you sure you want to add ${n} images to Notion?`,
+                importSuccess: (s, f) => `Imported ${s} successfully, ${f} failed`,
+                importFail: 'Import failed',
+                uploadStart: (n) => `Uploading ${n} images to image host...`,
+                uploadProgress: (i, total, name) => `Upload progress: ${i + 1}/${total} (${name})`,
+                uploadFail: 'Upload failed, check network or API key.',
+                imgbbRequired: 'Please enter ImgBB API Key (free at https://api.imgbb.com/)',
+                notionImporting: 'Upload completed, importing to Notion...',
+                notionImportDone: (s, f) => `Import completed: ${s} success, ${f} failed`,
+                sessionExpired: 'Session expired, please login again',
+                unauthorized: 'Unauthorized, please provide correct password',
+                networkError: 'Network error',
+                guestTitleDisabled: 'Guest mode: title disabled',
+                saveTitleDisabled: 'Guest mode: title disabled',
+                deleteBtn: '×',
+                renameBtn: '✏️',
+            }
+        };
+
+        // ---------- 当前语言 ----------
+        let currentLang = localStorage.getItem('lang') || 'zh';
+
+        // ---------- 翻译函数 ----------
+        function t(key, ...args) {
+            const dict = i18n[currentLang] || i18n.zh;
+            let val = dict[key] || key;
+            if (typeof val === 'function') {
+                return val(...args);
+            }
+            return val;
+        }
+
+        // ---------- 更新页面所有文本 ----------
+        function updateUI() {
+            document.title = t('pageTitle');
+            document.getElementById('pageTitle').innerText = t('pageTitle');
+            document.getElementById('loginTitle').innerText = t('loginTitle');
+            document.getElementById('loginSub').innerText = t('loginSub');
+            document.getElementById('passwordInput').placeholder = t('passwordPlaceholder');
+            document.getElementById('loginBtn').innerText = t('loginBtn');
+            document.getElementById('guestBtn').innerText = t('guestBtn');
+            document.getElementById('loginError').innerText = t('loginError');
+
+            document.getElementById('titleLabel').innerText = t('titleLabel');
+            document.getElementById('siteTitle').placeholder = t('titlePlaceholder');
+            document.getElementById('saveTitleBtn').innerText = t('saveTitle');
+            document.getElementById('refreshBtn').innerText = t('refreshBtn');
+            document.getElementById('apiBtn').innerText = t('apiBtn');
+
+            document.getElementById('addTitle').innerText = t('addTitle');
+            document.getElementById('batchLabel').innerText = t('batchLabel');
+            document.getElementById('importBtn').innerText = t('importBtn');
+            document.getElementById('uploadLabel').innerText = t('uploadLabel');
+            document.getElementById('imgbbKey').placeholder = t('imgbbPlaceholder');
+            document.getElementById('dropText').innerHTML = t('dropText');
+
+            document.getElementById('listTitle').innerHTML = t('listTitle') + ' (<span id="imageCount">0</span> ' + (currentLang === 'zh' ? '张' : 'items') + ')';
+            document.getElementById('loadingTip').innerText = t('loading');
+
+            // 更新语言按钮高亮
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+
+            // 重新渲染列表（如果已加载）
+            if (typeof imageListData !== 'undefined') {
+                renderImages(imageListData);
+            }
+        }
+
+        // ---------- 语言切换事件 ----------
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const lang = this.dataset.lang;
+                    if (lang === currentLang) return;
+                    currentLang = lang;
+                    localStorage.setItem('lang', lang);
+                    updateUI();
+                    // 如果已登录，刷新标题显示
+                    if (document.getElementById('mainContent').classList.contains('hidden') === false) {
+                        // 重新加载标题和列表
+                        initApp();
+                    }
+                });
+            });
+            // 初始渲染
+            updateUI();
+        });
+
+        // ---------- 全局状态 ----------
         let isAdmin = false;
+        let imageListData = [];
 
         function getAdminPassword() {
             return sessionStorage.getItem('adminPassword') || '';
@@ -245,7 +443,7 @@
         }
 
         async function renameImage(pageId, currentName) {
-            const newName = prompt('请输入新的图片名称：', currentName);
+            const newName = prompt(t('renamePrompt'), currentName);
             if (newName === null || newName.trim() === '') return;
             try {
                 const res = await authFetch('/api/rename', {
@@ -254,25 +452,26 @@
                     body: JSON.stringify({ pageId, newName: newName.trim() })
                 });
                 if (res.status === 401) {
-                    alert('登录已过期，请重新登录');
+                    alert(t('sessionExpired'));
                     sessionStorage.removeItem('adminPassword');
                     location.reload();
                     return;
                 }
                 const data = await res.json();
                 if (res.ok) {
-                    alert('重命名成功');
+                    alert(t('renameSuccess'));
                     fetchList();
                 } else {
-                    alert('重命名失败: ' + (data.detail || data.error));
+                    alert(t('renameFail') + ': ' + (data.detail || data.error));
                 }
             } catch (err) {
-                alert('网络错误: ' + err.message);
+                alert(t('networkError') + ': ' + err.message);
             }
         }
 
         // ---------- 初始化 ----------
         document.addEventListener('DOMContentLoaded', async () => {
+            // 已经处理了语言切换
             try {
                 const res = await fetch('/api/check-auth');
                 const data = await res.json();
@@ -287,7 +486,7 @@
                     await initApp();
                 }
             } catch (err) {
-                alert('检查授权状态失败: ' + err.message);
+                alert(t('networkError') + ': ' + err.message);
             }
 
             document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -310,9 +509,10 @@
                         await initApp();
                     } else {
                         document.getElementById('loginError').classList.remove('hidden');
+                        document.getElementById('loginError').innerText = t('loginError');
                     }
                 } catch (err) {
-                    alert('登录请求失败: ' + err.message);
+                    alert(t('networkError') + ': ' + err.message);
                 }
             });
 
@@ -327,15 +527,17 @@
             document.getElementById('passwordInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('loginBtn').click();
             });
+
+            // 重新绑定语言切换（已绑定）
         });
 
-        // ---------- 应用初始化（异步获取全局标题） ----------
+        // ---------- 应用初始化 ----------
         async function initApp() {
             const titleInput = document.getElementById('siteTitle');
             const saveBtn = document.getElementById('saveTitleBtn');
-            const DEFAULT_TITLE = '我的随机图库';
+            const DEFAULT_TITLE = currentLang === 'zh' ? '我的随机图库' : 'My Image Gallery';
 
-            // 1. 尝试从服务器获取全局标题
+            // 1. 获取全局标题
             let globalTitle = DEFAULT_TITLE;
             try {
                 const res = await fetch('/api/settings');
@@ -349,33 +551,30 @@
                 console.warn('获取全局标题异常，使用默认值', e);
             }
 
-            // 2. 更新本地存储和输入框
             localStorage.setItem('siteTitle', globalTitle);
             titleInput.value = globalTitle;
             document.title = globalTitle;
 
-            // 3. 根据权限控制输入框和保存按钮
             titleInput.disabled = !isAdmin;
             saveBtn.disabled = !isAdmin;
             if (!isAdmin) {
-                titleInput.title = '访客模式不可修改标题';
-                saveBtn.title = '访客模式不可修改标题';
+                titleInput.title = t('guestTitleDisabled');
+                saveBtn.title = t('saveTitleDisabled');
             } else {
                 titleInput.title = '';
-                saveBtn.title = '保存标题到服务器';
+                saveBtn.title = t('saveTitle');
             }
 
-            // 4. 保存按钮事件
+            // 保存按钮
             saveBtn.onclick = async function() {
                 if (!isAdmin) return;
                 const newTitle = titleInput.value.trim();
                 if (!newTitle) {
-                    alert('标题不能为空，请重新输入');
+                    alert(t('titleEmpty'));
                     return;
                 }
-                // 禁用按钮防止重复提交
                 saveBtn.disabled = true;
-                saveBtn.innerText = '保存中...';
+                saveBtn.innerText = t('saveTitle') + '...';
                 try {
                     const res = await authFetch('/api/settings', {
                         method: 'POST',
@@ -383,7 +582,7 @@
                         body: JSON.stringify({ title: newTitle })
                     });
                     if (res.status === 401) {
-                        alert('登录已过期，请重新登录');
+                        alert(t('sessionExpired'));
                         sessionStorage.removeItem('adminPassword');
                         location.reload();
                         return;
@@ -392,31 +591,27 @@
                         const errData = await res.json();
                         throw new Error(errData.detail || errData.error || '更新失败');
                     }
-                    // 更新本地存储和页面标题
                     localStorage.setItem('siteTitle', newTitle);
                     document.title = newTitle;
-                    alert('标题保存成功！');
+                    alert(t('titleSaveSuccess'));
                 } catch (err) {
-                    alert('保存标题失败: ' + err.message);
-                    // 回退到之前保存的值（从本地存储读取）
+                    alert(t('titleSaveFail') + ': ' + err.message);
                     const fallback = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
                     titleInput.value = fallback;
                     document.title = fallback;
                 } finally {
                     saveBtn.disabled = false;
-                    saveBtn.innerText = '保存标题';
+                    saveBtn.innerText = t('saveTitle');
                 }
             };
 
-            // 5. 输入框内容变化时，仅启用/禁用保存按钮（不自动提交）
             titleInput.oninput = function() {
                 if (!isAdmin) return;
                 const current = titleInput.value.trim();
-                // 如果为空，禁用保存按钮（但允许编辑）
                 saveBtn.disabled = (current === '');
             };
 
-            // 加载 ImgBB Key
+            // ImgBB Key
             const savedKey = localStorage.getItem('imgbbKey') || '';
             document.getElementById('imgbbKey').value = savedKey;
             document.getElementById('imgbbKey').addEventListener('input', (e) => {
@@ -441,16 +636,17 @@
             await fetchList();
         }
 
-        // ---------- 其余函数保持不变（fetchList, deleteImage, addUrls, handleFiles） ----------
+        // ---------- 列表渲染 ----------
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
+            document.getElementById('loadingTip').innerText = t('loading');
             try {
                 const endpoint = isAdmin ? '/api/list' : '/api/public-list';
                 const fetcher = isAdmin ? authFetch : fetch;
                 const res = await fetcher(endpoint);
                 if (!res.ok) {
                     if (res.status === 401) {
-                        alert('登录已过期，请重新登录');
+                        alert(t('sessionExpired'));
                         sessionStorage.removeItem('adminPassword');
                         location.reload();
                         return;
@@ -460,64 +656,78 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.detail || data.error);
 
-                const grid = document.getElementById('imageGrid');
-                document.getElementById('imageCount').innerText = data.total || 0;
-
-                if (!data.data || data.data.length === 0) {
-                    grid.innerHTML = '<div class="col-span-full text-gray-400 text-center py-10">暂无图片，快去添加吧！</div>';
-                    return;
-                }
-
-                grid.innerHTML = data.data.map(item => `
-                    <div class="card border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white">
-                        ${item.cover ? `<img src="${item.cover}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` :
-                        `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">无预览</div>`}
-                        <div class="p-2 text-xs truncate text-gray-600" title="${item.name}">${item.name}</div>
-                        ${isAdmin ? `
-                            <button class="rename-btn" onclick="renameImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">✏️</button>
-                            <button class="delete-btn" onclick="deleteImage('${item.id}', '${item.name.replace(/'/g, "\\'")}')">×</button>
-                        ` : ''}
-                        <button class="download-btn" onclick="downloadImage('${item.cover}')">⬇ 下载</button>
-                    </div>
-                `).join('');
+                imageListData = data.data || [];
+                renderImages(imageListData);
 
             } catch (err) {
-                alert('加载列表失败: ' + err.message);
+                alert(t('networkError') + ': ' + err.message);
             }
             document.getElementById('loadingTip').style.display = 'none';
         }
 
+        function renderImages(images) {
+            const grid = document.getElementById('imageGrid');
+            const count = document.getElementById('imageCount');
+            count.innerText = images.length;
+
+            if (!images || images.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-gray-400 text-center py-10">${t('empty')}</div>`;
+                return;
+            }
+
+            grid.innerHTML = images.map(item => {
+                const name = item.name || '未命名';
+                const cover = item.cover || '';
+                const id = item.id;
+                const safeName = name.replace(/'/g, "\\'");
+                return `
+                    <div class="card border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white">
+                        ${cover ? `<img src="${cover}" alt="${name}" loading="lazy" onerror="this.src='https://placehold.co/300x200/ccc/999?text=加载失败'" />` :
+                        `<div class="h-[200px] bg-gray-200 flex items-center justify-center text-gray-400">${t('noPreview')}</div>`}
+                        <div class="p-2 text-xs truncate text-gray-600" title="${name}">${name}</div>
+                        ${isAdmin ? `
+                            <button class="rename-btn" onclick="renameImage('${id}', '${safeName}')" title="${t('renameBtn')}">✏️</button>
+                            <button class="delete-btn" onclick="deleteImage('${id}', '${safeName}')" title="${t('deleteBtn')}">×</button>
+                        ` : ''}
+                        <button class="download-btn" onclick="downloadImage('${cover}')">${t('download')}</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ---------- 删除 ----------
         async function deleteImage(pageId, fileName) {
-            if (!confirm(`确定要删除图片“${fileName}”吗？此操作不可恢复！`)) return;
+            if (!confirm(t('deleteConfirm', fileName))) return;
             try {
                 const res = await authFetch(`/api/delete?pageId=${pageId}`, { method: 'DELETE' });
                 if (res.status === 401) {
-                    alert('登录已过期，请重新登录');
+                    alert(t('sessionExpired'));
                     sessionStorage.removeItem('adminPassword');
                     location.reload();
                     return;
                 }
                 const data = await res.json();
                 if (res.ok) {
-                    alert('删除成功');
+                    alert(t('deleteSuccess'));
                     fetchList();
                 } else {
-                    alert('删除失败: ' + (data.detail || data.error));
+                    alert(t('deleteFail') + ': ' + (data.detail || data.error));
                 }
             } catch (err) {
-                alert('网络错误: ' + err.message);
+                alert(t('networkError') + ': ' + err.message);
             }
         }
 
+        // ---------- 添加外链 ----------
         async function addUrls() {
             const text = document.getElementById('urlInput').value;
             const urls = text.split('\n').map(s => s.trim()).filter(s => s);
-            if (urls.length === 0) return alert('请在文本框中粘贴图片链接');
-            if (!confirm(`确定要添加 ${urls.length} 张图片到 Notion 吗？`)) return;
+            if (urls.length === 0) return alert(t('batchLabel') + ' ' + (currentLang === 'zh' ? '不能为空' : 'cannot be empty'));
+            if (!confirm(t('importConfirm', urls.length))) return;
 
             const btn = event.target;
             btn.disabled = true;
-            btn.innerText = '导入中...';
+            btn.innerText = t('importBtn') + '...';
             try {
                 const res = await authFetch('/api/add', {
                     method: 'POST',
@@ -525,36 +735,37 @@
                     body: JSON.stringify({ urls })
                 });
                 if (res.status === 401) {
-                    alert('登录已过期，请重新登录');
+                    alert(t('sessionExpired'));
                     sessionStorage.removeItem('adminPassword');
                     location.reload();
                     return;
                 }
                 const data = await res.json();
                 if (res.ok) {
-                    alert(`成功导入 ${data.success} 张，失败 ${data.failed} 张` +
-                          (data.errors && data.errors.length ? '\n\n错误详情：' + JSON.stringify(data.errors, null, 2) : ''));
+                    alert(t('importSuccess', data.success, data.failed) +
+                          (data.errors && data.errors.length ? '\n\n' + JSON.stringify(data.errors, null, 2) : ''));
                     document.getElementById('urlInput').value = '';
                     fetchList();
                 } else {
-                    alert('导入失败: ' + (data.detail || data.error));
+                    alert(t('importFail') + ': ' + (data.detail || data.error));
                 }
             } catch (err) {
-                alert('网络错误: ' + err.message);
+                alert(t('networkError') + ': ' + err.message);
             }
             btn.disabled = false;
-            btn.innerText = '导入外链';
+            btn.innerText = t('importBtn');
         }
 
+        // ---------- 上传文件 ----------
         async function handleFiles(files) {
             const apiKey = document.getElementById('imgbbKey').value.trim();
-            if (!apiKey) return alert('请先输入 ImgBB API Key（免费申请：https://api.imgbb.com/）');
+            if (!apiKey) return alert(t('imgbbRequired'));
 
             const fileArray = Array.from(files);
             if (fileArray.length === 0) return;
 
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerText = `正在上传 ${fileArray.length} 张图片到图床...`;
+            statusDiv.innerText = t('uploadStart', fileArray.length);
             const uploadedUrls = [];
 
             for (let i = 0; i < fileArray.length; i++) {
@@ -563,7 +774,7 @@
                 formData.append('key', apiKey);
                 formData.append('image', file);
                 try {
-                    statusDiv.innerText = `上传进度: ${i + 1}/${fileArray.length} (${file.name})`;
+                    statusDiv.innerText = t('uploadProgress', i, fileArray.length, file.name);
                     const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
                     const data = await res.json();
                     if (data.success) uploadedUrls.push(data.data.url);
@@ -574,11 +785,11 @@
             }
 
             if (uploadedUrls.length === 0) {
-                statusDiv.innerText = '上传失败，请检查网络或密钥是否正确。';
+                statusDiv.innerText = t('uploadFail');
                 return;
             }
 
-            statusDiv.innerText = `图床上传完成，正在导入 Notion...`;
+            statusDiv.innerText = t('notionImporting');
             try {
                 const res = await authFetch('/api/add', {
                     method: 'POST',
@@ -586,19 +797,22 @@
                     body: JSON.stringify({ urls: uploadedUrls })
                 });
                 if (res.status === 401) {
-                    alert('登录已过期，请重新登录');
+                    alert(t('sessionExpired'));
                     sessionStorage.removeItem('adminPassword');
                     location.reload();
                     return;
                 }
                 const data = await res.json();
-                statusDiv.innerText = `导入完成：成功 ${data.success} 张，失败 ${data.failed} 张` +
-                                      (data.errors && data.errors.length ? '\n\n错误详情：' + JSON.stringify(data.errors, null, 2) : '');
+                statusDiv.innerText = t('notionImportDone', data.success, data.failed) +
+                                      (data.errors && data.errors.length ? '\n\n' + JSON.stringify(data.errors, null, 2) : '');
                 fetchList();
             } catch (err) {
-                statusDiv.innerText = '导入 Notion 失败: ' + err.message;
+                statusDiv.innerText = t('networkError') + ': ' + err.message;
             }
         }
+
+        // 为了支持语言切换后重新渲染，暴露 renderImages
+        window.renderImages = renderImages;
     </script>
 
 </body>
