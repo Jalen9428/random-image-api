@@ -2,7 +2,8 @@
 
 A lightweight random image API powered by **Vercel + Notion** with a built‑in management panel.  
 Manage your image library via a web interface – add, preview, rename, and delete images, all protected by an optional password.  
-**Guest mode** allows anyone to browse and download images without logging in.
+**Guest mode** allows anyone to browse and download images without logging in.  
+**Global site title** can be set once by the admin and is visible to all visitors.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID,ADMIN_PASSWORD&envDescription=Please%20enter%20your%20Notion%20credentials%20and%20(optionally)%20an%20admin%20password%20for%20the%20management%20panel)
 
@@ -22,6 +23,7 @@ Manage your image library via a web interface – add, preview, rename, and dele
 - 👤 **Guest mode**: Anyone can browse the gallery and download images without a password; management functions remain protected
 - 🔐 **Optional password protection**: Protect the management panel with an environment variable; if not set, the panel is open (admin only)
 - 🌏 **Multi‑language compatible**: Automatically adapts to both `Name` (English) and `名称` (Chinese) title properties in Notion
+- 🏷️ **Global site title**: Admin can change the site title once, and it is stored in Notion – all visitors see the updated title
 - ⚡ **Fast response**: Powered by Vercel edge functions and Notion CDN
 - 🆓 **Free to use**: Works within free tiers of Vercel and Notion
 - 🖼️ **Supports common formats**: JPG, PNG, WebP, GIF, etc.
@@ -40,6 +42,7 @@ Manage your image library via a web interface – add, preview, rename, and dele
    - You can upload images directly
    - Or use external image URLs
    - For users in mainland China, external links are recommended because direct uploads may load slowly
+4. **Add a `Value` property** (type **Text**) – this column stores the global site title. It is **required** for the global title feature to work.
 
 ### 2. Get your Notion API credentials
 
@@ -68,7 +71,7 @@ Manage your image library via a web interface – add, preview, rename, and dele
 After deployment, you can access:
 
 - **Random image API**: `https://your-domain.vercel.app/api/random` – returns a 302 redirect to a random image.
-- **Management panel**: `https://your-domain.vercel.app/` – browse, add, rename, delete, and download images via a user‑friendly interface.
+- **Management panel**: `https://your-domain.vercel.app/` – browse, add, rename, delete, and download images, and manage the global site title.
 
 > **Note**: In mainland China, Vercel’s default domain may be inaccessible due to DNS issues. You may need to use a custom domain.
 
@@ -76,7 +79,7 @@ After deployment, you can access:
 
 ## 📁 Project Structure (Full)
 
-```
+代码块
 random-image-api/
 ├── api/
 │   ├── random.js         # Public API – returns random image (302 redirect)
@@ -84,6 +87,7 @@ random-image-api/
 │   ├── add.js            # (Protected) batch add image URLs to Notion
 │   ├── delete.js         # (Protected) delete an image by page ID
 │   ├── rename.js         # (Protected) rename an image
+│   ├── settings.js       # (Protected) get/set global site title
 │   ├── public-list.js    # Public list for guest viewing (no auth)
 │   ├── download.js       # Proxy download endpoint for images
 │   └── check-auth.js     # Checks if password is set and validates login
@@ -91,7 +95,7 @@ random-image-api/
 │   └── index.html        # Management panel frontend (login + dashboard + guest mode)
 ├── package.json          # Dependencies (none required for core)
 └── README.md
-```
+代码块
 
 ---
 
@@ -99,9 +103,14 @@ random-image-api/
 
 ### Login & Guest Mode
 - If `ADMIN_PASSWORD` is set, the login screen will appear when accessing `/`.
-- Enter the password to gain full admin access (add/rename/delete functions).
-- Click **“以访客身份查看图库”** (Guest View) to browse all images without logging in – you can preview and download, but not add, rename, or delete.
+- Enter the password to gain full admin access (add/rename/delete functions, and change global title).
+- Click **“以访客身份查看图库”** (Guest View) to browse all images without logging in – you can preview and download, but not add, rename, delete, or change the title.
 - If `ADMIN_PASSWORD` is **not** set, the login screen will be bypassed, and you will have full admin access immediately.
+
+### Global Site Title
+- **Admin only**: Edit the title in the input field, then click the **“保存标题”** (Save Title) button. The title will be saved to Notion and immediately visible to all visitors.
+- **Guest**: The title input is disabled; guests see the globally set title.
+- The title is stored in your Notion database as a special record (with the name `site_title`). The `Value` column (type Text) is used to store the title string.
 
 ### Adding Images (Admin only)
 - **Batch external links**: Paste multiple URLs (one per line) and click “Import”.
@@ -114,19 +123,20 @@ random-image-api/
 - **Download**: Click the “⬇ 下载” button on any image card to download the original image (proxied through the server to avoid CORS issues).
 - **Delete (Admin only)**: Hover over an image card to reveal a red **×** button at the top‑right – click to delete the image (moves it to the Notion trash).
 
-> **Important**: Admin endpoints (`/api/list`, `/api/add`, `/api/rename`, `/api/delete`) require the `X-Admin-Password` header. The frontend automatically adds it after admin login. Guest users use the public endpoints (`/api/public-list` and `/api/download`) which do not require authentication.
+> **Important**: Admin endpoints (`/api/list`, `/api/add`, `/api/rename`, `/api/delete`, `/api/settings` POST) require the `X-Admin-Password` header. The frontend automatically adds it after admin login. Guest users use the public endpoints (`/api/public-list`, `/api/download`, and `/api/settings` GET) which do not require authentication.
 
 ---
 
 ## ⚙️ Customization
 
 ### Change the image property name
-The code now automatically detects whether your title property is `Name` (English) or `名称` (Chinese). If you use a custom name, update the following files:
+The code automatically detects whether your title property is `Name` (English) or `名称` (Chinese). If you use a custom name, update the following files:
 - `api/random.js`
 - `api/list.js`
 - `api/add.js`
 - `api/public-list.js`
 - `api/rename.js`
+- `api/settings.js`
 
 Look for `page.properties['Image']` and replace `'Image'` with your actual image‑column name.  
 For the title column, the system will fallback to `名称` if `Name` is not found – you can modify that logic as needed.
@@ -166,6 +176,12 @@ A: Guest mode uses a separate public API endpoint (`/api/public-list`) that retu
 **Q: I get `Name is not a property` error when adding images?**  
 A: This error indicates that your Notion database does not have a title‑type property named `Name` or `名称`. The code already tries to auto‑detect between these two common names, but if you have a custom title column name (e.g., `Title`), you need to modify the files listed in the **Customization** section above. Alternatively, ensure your database has a column with type **Title** and that it is named `Name` or `名称`. If you are using a different language, you may need to adjust the fallback logic in the code.
 
+**Q: I get an error about missing `Value` column when changing the global title?**  
+A: The `Value` column (type **Text**) is required to store the global title. Please add a column named `Value` of type `Text` to your Notion database and redeploy.
+
+**Q: How do I change the global site title?**  
+A: Log in as admin, edit the title in the input field, and click the “保存标题” button. The title is saved to Notion and becomes visible to all visitors.
+
 ---
 
 ## 📄 License
@@ -181,7 +197,8 @@ MIT © Jalen9428
 # Random Image API
 
 一个基于 **Vercel + Notion** 的轻量级随机图片 API，并附带**可视化管理面板**。  
-你可以通过 Web 界面管理图片库——添加、预览、重命名、删除图片，并支持**访客模式**（无需密码即可浏览和下载图片）。
+你可以通过 Web 界面管理图片库——添加、预览、重命名、删除图片，并支持**访客模式**（无需密码即可浏览和下载图片）。  
+**全局网站标题**可由管理员一次设置，所有访客共享。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID,ADMIN_PASSWORD&envDescription=请填入%20Notion%20凭证和（可选）管理面板密码)
 
@@ -194,6 +211,7 @@ MIT © Jalen9428
 - 👤 **访客模式**：无需密码即可浏览全部图片并下载，管理功能受密码保护
 - 🔐 **可选密码保护**：通过环境变量设置管理面板密码，不设置则管理员可直接进入
 - 🌏 **多语言兼容**：自动适配 Notion 中的 `Name`（英文）或 `名称`（中文）标题属性
+- 🏷️ **全局标题设置**：管理员修改标题后保存到 Notion，所有访客即时看到新标题
 - ⚡ **响应迅速**：基于 Vercel 边缘函数 + Notion CDN
 - 🆓 **完全免费**：使用 Vercel 和 Notion 免费额度即可运行
 - 🖼️ **支持常见格式**：JPG、PNG、WebP、GIF 等
@@ -210,6 +228,7 @@ MIT © Jalen9428
    - 如果想用其他名称，需同步修改代码
 3. 在该属性中添加图片（可直接上传或使用外链）。
    - 中国大陆用户建议使用外链，因为直接上传的图片可能加载较慢
+4. **添加一个 `Value` 属性**（类型为 **Text**）—— 该列用于存储全局网站标题，**必须添加**才能使用标题功能。
 
 ### 2. 获取 Notion API 凭证
 
@@ -234,7 +253,7 @@ MIT © Jalen9428
 部署成功后，你可以访问：
 
 - **随机图片 API**：`https://你的域名.vercel.app/api/random` – 返回 302 重定向到随机图片。
-- **管理面板**：`https://你的域名.vercel.app/` – 通过可视化界面管理图片，访客也可预览下载。
+- **管理面板**：`https://你的域名.vercel.app/` – 通过可视化界面管理图片，访客也可预览下载，管理员可修改全局标题。
 
 > **注意**：Vercel 默认域名在中国大陆可能因 DNS 问题无法访问，建议配置自定义域名。
 
@@ -250,6 +269,7 @@ random-image-api/
 │   ├── add.js            # （受保护）批量添加外链到 Notion
 │   ├── delete.js         # （受保护）根据页面 ID 删除图片
 │   ├── rename.js         # （受保护）重命名图片
+│   ├── settings.js       # （受保护）获取/设置全局标题
 │   ├── public-list.js    # 公开列表 – 供访客预览（无需认证）
 │   ├── download.js       # 代理下载图片（解决跨域）
 │   └── check-auth.js     # 检查密码状态并验证登录
@@ -265,9 +285,14 @@ random-image-api/
 
 ### 登录与访客模式
 - 若设置了 `ADMIN_PASSWORD`，访问根路径 `/` 时会弹出登录界面。
-- 输入密码可进入完整管理界面（添加/重命名/删除功能）。
-- 点击 **“以访客身份查看图库”** 按钮，无需密码即可预览所有图片，并可下载，但不能增删改。
+- 输入密码可进入完整管理界面（添加/重命名/删除功能，以及修改全局标题）。
+- 点击 **“以访客身份查看图库”** 按钮，无需密码即可预览所有图片，并可下载，但不能增删改标题。
 - 若未设置 `ADMIN_PASSWORD`，登录界面将不会出现，直接进入管理面板（管理员权限）。
+
+### 全局网站标题
+- **仅管理员**：在标题输入框中编辑，点击 **“保存标题”** 按钮，标题会保存到 Notion，所有访客立即看到新标题。
+- **访客**：标题输入框禁用，只能看到已设置的全局标题。
+- 标题存储在 Notion 数据库中的一条特殊记录（名称为 `site_title`），`Value` 列（Text 类型）存储标题字符串。
 
 ### 添加图片（仅管理员）
 - **批量外链**：在文本框中每行一个 URL，点击“导入外链”。
@@ -280,7 +305,7 @@ random-image-api/
 - **下载**：每个图片卡片下方有“⬇ 下载”按钮，点击即可通过代理下载原图（解决跨域问题）。
 - **删除（仅管理员）**：鼠标悬停到图片卡片上，右上角会出现红色 **×** 按钮，点击确认后即可删除图片（移入 Notion 回收站）。
 
-> **重要**：管理功能的后端接口（`/api/list`、`/api/add`、`/api/rename`、`/api/delete`）需要携带 `X-Admin-Password` 头，前端登录后自动添加。访客使用公开接口（`/api/public-list` 和 `/api/download`），无需认证。
+> **重要**：管理功能的后端接口（`/api/list`、`/api/add`、`/api/rename`、`/api/delete`、`/api/settings` POST）需要携带 `X-Admin-Password` 头，前端登录后自动添加。访客使用公开接口（`/api/public-list`、`/api/download` 和 `/api/settings` GET），无需认证。
 
 ---
 
@@ -293,6 +318,7 @@ random-image-api/
 - `api/add.js`
 - `api/public-list.js`
 - `api/rename.js`
+- `api/settings.js`
 
 将 `page.properties['Image']` 中的 `'Image'` 替换为你的实际图片列名。  
 标题列系统会优先查找 `Name`，若不存在则使用 `名称` —— 你可以根据需要调整该逻辑。
@@ -331,6 +357,12 @@ A：访客模式使用独立的公开 API 端点（`/api/public-list`）获取�
 
 **Q：添加图片时提示 `Name is not a property` 错误怎么办？**  
 A：这个错误表示您的 Notion 数据库没有名为 `Name` 或 `名称` 的标题类型属性。代码已经尝试自动适配这两种常见的命名，但如果您使用了自定义标题列名（例如 `Title`），则需要按照上方 **自定义配置** 中的说明修改相应文件。或者，确保您的数据库中有一个类型为 **Title** 的列，并且命名为 `Name` 或 `名称`。如果使用其他语言，可能需要调整代码中的后备逻辑。
+
+**Q：修改全局标题时提示缺少 `Value` 列？**  
+A：`Value` 列（类型为 Text）是存储全局标题所必需的，请先在 Notion 数据库中添加一个名为 `Value`、类型为 `Text` 的列，然后重新部署。
+
+**Q：如何修改全局网站标题？**  
+A：以管理员身份登录，在标题输入框中编辑新标题，点击“保存标题”按钮即可。标题会保存到 Notion，所有访客即时看到。
 
 ---
 
