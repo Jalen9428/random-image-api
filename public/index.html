@@ -160,11 +160,14 @@
     <!-- 主界面 -->
     <div id="mainContent" class="max-w-6xl mx-auto hidden">
 
-        <!-- 标题个性化 -->
+        <!-- 标题个性化（增加保存按钮） -->
         <div class="bg-white rounded-xl shadow p-6 mb-6 flex justify-between items-center flex-wrap gap-4">
-            <div>
-                <label class="text-sm text-gray-500">网站标题</label>
-                <input id="siteTitle" type="text" placeholder="输入你的图库名称" class="text-2xl font-bold border-b-2 border-transparent focus:border-blue-500 outline-none px-2 py-1 w-64" />
+            <div class="flex items-center gap-3 flex-wrap">
+                <div>
+                    <label class="text-sm text-gray-500">网站标题</label>
+                    <input id="siteTitle" type="text" placeholder="输入你的图库名称" class="text-2xl font-bold border-b-2 border-transparent focus:border-blue-500 outline-none px-2 py-1 w-64" />
+                </div>
+                <button id="saveTitleBtn" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>保存标题</button>
             </div>
             <div class="flex gap-3">
                 <button onclick="fetchList()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">刷新列表</button>
@@ -329,6 +332,7 @@
         // ---------- 应用初始化（异步获取全局标题） ----------
         async function initApp() {
             const titleInput = document.getElementById('siteTitle');
+            const saveBtn = document.getElementById('saveTitleBtn');
             const DEFAULT_TITLE = '我的随机图库';
 
             // 1. 尝试从服务器获取全局标题
@@ -345,29 +349,33 @@
                 console.warn('获取全局标题异常，使用默认值', e);
             }
 
-            // 2. 更新本地存储（同步缓存）
+            // 2. 更新本地存储和输入框
             localStorage.setItem('siteTitle', globalTitle);
             titleInput.value = globalTitle;
             document.title = globalTitle;
 
-            // 3. 根据权限控制输入框
+            // 3. 根据权限控制输入框和保存按钮
             titleInput.disabled = !isAdmin;
-            titleInput.title = isAdmin ? '' : '访客模式不可修改标题';
+            saveBtn.disabled = !isAdmin;
+            if (!isAdmin) {
+                titleInput.title = '访客模式不可修改标题';
+                saveBtn.title = '访客模式不可修改标题';
+            } else {
+                titleInput.title = '';
+                saveBtn.title = '保存标题到服务器';
+            }
 
-            // 4. 标题修改事件（管理员）
-            titleInput.oninput = async function(e) {
+            // 4. 保存按钮事件
+            saveBtn.onclick = async function() {
                 if (!isAdmin) return;
-                const newTitle = e.target.value.trim();
+                const newTitle = titleInput.value.trim();
                 if (!newTitle) {
-                    alert('标题不能为空');
-                    e.target.value = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
+                    alert('标题不能为空，请重新输入');
                     return;
                 }
-                // 先本地更新，提升响应速度
-                localStorage.setItem('siteTitle', newTitle);
-                document.title = newTitle;
-
-                // 调用 API 更新全局设置
+                // 禁用按钮防止重复提交
+                saveBtn.disabled = true;
+                saveBtn.innerText = '保存中...';
                 try {
                     const res = await authFetch('/api/settings', {
                         method: 'POST',
@@ -384,14 +392,28 @@
                         const errData = await res.json();
                         throw new Error(errData.detail || errData.error || '更新失败');
                     }
-                    // 成功，无需额外操作
+                    // 更新本地存储和页面标题
+                    localStorage.setItem('siteTitle', newTitle);
+                    document.title = newTitle;
+                    alert('标题保存成功！');
                 } catch (err) {
-                    alert('更新全局标题失败: ' + err.message + '，已回退本地标题');
-                    // 回滚到之前的标题
-                    const fallbackTitle = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
-                    titleInput.value = fallbackTitle;
-                    document.title = fallbackTitle;
+                    alert('保存标题失败: ' + err.message);
+                    // 回退到之前保存的值（从本地存储读取）
+                    const fallback = localStorage.getItem('siteTitle') || DEFAULT_TITLE;
+                    titleInput.value = fallback;
+                    document.title = fallback;
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = '保存标题';
                 }
+            };
+
+            // 5. 输入框内容变化时，仅启用/禁用保存按钮（不自动提交）
+            titleInput.oninput = function() {
+                if (!isAdmin) return;
+                const current = titleInput.value.trim();
+                // 如果为空，禁用保存按钮（但允许编辑）
+                saveBtn.disabled = (current === '');
             };
 
             // 加载 ImgBB Key
@@ -420,11 +442,6 @@
         }
 
         // ---------- 其余函数保持不变（fetchList, deleteImage, addUrls, handleFiles） ----------
-        // 为了节省篇幅，此处省略，但实际使用时必须保留这些函数（与之前完全一样）
-        // 请从之前的完整 index.html 中复制 fetchList, deleteImage, addUrls, handleFiles 函数
-        // 或者直接使用我下面提供的完整版本（确保这些函数存在）
-
-        // ---------- 以下为必须保留的函数（与之前一致） ----------
         async function fetchList() {
             document.getElementById('loadingTip').style.display = 'block';
             try {
