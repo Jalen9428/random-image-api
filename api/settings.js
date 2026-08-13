@@ -17,8 +17,45 @@ module.exports = async (req, res) => {
     const CONFIG_NAME = 'site_title';
     const DEFAULT_TITLE = '我的随机图库';
 
+    // 1. 获取数据库 schema，确定标题属性名并检查 Value 列
+    let titlePropName = '名称'; // 默认
+    let valuePropExists = false;
+    try {
+        const dbRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Notion-Version': '2022-06-28'
+            }
+        });
+        const dbData = await dbRes.json();
+        if (!dbRes.ok) {
+            throw new Error(dbData.message || '无法获取数据库信息');
+        }
+        const props = dbData.properties;
+        // 查找标题属性
+        const titleProp = Object.values(props).find(p => p.type === 'title');
+        if (titleProp) titlePropName = titleProp.name;
+        // 检查 Value 列（类型为 rich_text，名称为 'Value'）
+        const valueProp = Object.values(props).find(p => p.type === 'rich_text' && p.name === 'Value');
+        if (valueProp) valuePropExists = true;
+    } catch (err) {
+        console.error('获取数据库 schema 失败:', err);
+        return res.status(500).json({ error: '获取数据库信息失败', detail: err.message });
+    }
+
+    if (!valuePropExists) {
+        return res.status(400).json({ 
+            error: '数据库中缺少 "Value" 列（类型为 Text），请手动添加该列。' 
+        });
+    }
+
     if (req.method === 'GET') {
         try {
+            // 使用动态标题属性名进行过滤
+            const filter = {
+                property: titlePropName,
+                title: { equals: CONFIG_NAME }
+            };
             const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
                 method: 'POST',
                 headers: {
@@ -26,12 +63,7 @@ module.exports = async (req, res) => {
                     'Notion-Version': '2022-06-28',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    filter: {
-                        property: 'Name',
-                        title: { equals: CONFIG_NAME }
-                    }
-                })
+                body: JSON.stringify({ filter })
             });
             const data = await response.json();
             if (!response.ok) {
@@ -64,6 +96,10 @@ module.exports = async (req, res) => {
 
         try {
             // 查询是否存在配置记录
+            const filter = {
+                property: titlePropName,
+                title: { equals: CONFIG_NAME }
+            };
             const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
                 method: 'POST',
                 headers: {
@@ -71,12 +107,7 @@ module.exports = async (req, res) => {
                     'Notion-Version': '2022-06-28',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    filter: {
-                        property: 'Name',
-                        title: { equals: CONFIG_NAME }
-                    }
-                })
+                body: JSON.stringify({ filter })
             });
             const queryData = await queryRes.json();
             if (!queryRes.ok) {
@@ -87,17 +118,6 @@ module.exports = async (req, res) => {
             if (queryData.results && queryData.results.length > 0) {
                 pageId = queryData.results[0].id;
             }
-
-            // 获取数据库的标题属性名
-            const dbRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Notion-Version': '2022-06-28'
-                }
-            });
-            const dbData = await dbRes.json();
-            const titleProp = Object.values(dbData.properties).find(p => p.type === 'title');
-            const titlePropName = titleProp ? titleProp.name : '名称';
 
             let updateRes;
             if (pageId) {
