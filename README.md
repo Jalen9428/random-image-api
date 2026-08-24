@@ -1,5 +1,7 @@
 # English README
 
+---
+
 # Random Image API
 
 A lightweight random image API powered by **Vercel + Notion** with a built‑in management panel.  
