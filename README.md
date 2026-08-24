@@ -1,3 +1,5 @@
+# English README
+
 # Random Image API
 
 A lightweight random image API powered by **Vercel + Notion** with a built‑in management panel.  
@@ -211,6 +213,13 @@ MIT © Jalen9428
 🌐 管理面板支持 **中文 / English** 一键切换。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJalen9428%2Frandom-image-api&env=NOTION_API_KEY,NOTION_DATABASE_ID,ADMIN_PASSWORD&envDescription=请填入%20Notion%20凭证和（可选）管理面板密码)
+
+---
+
+## 🌐 Language / 语言切换
+
+- [中文 README](#中文-readme)
+- [English README](#english-readme)
 
 ---
 
